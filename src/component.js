@@ -134,6 +134,22 @@ export const ComponentModel = Base.extend($validateThat, {
                 _burden[key] = value.map(DependencyModel);
             },
             /**
+             * Determines if the component dependency group is complete.
+             * @method allDependenciesDefined
+             * @param  {string}  [key=Facet.Parameters]  -  dependency group
+             * @return {boolean} true if all dependencies defined.
+             */                            
+            allDependenciesDefined(key) {
+                const deps = _burden[key || Facet.Parameters];
+                if (!deps) return false;
+                for (let i = 0; i < deps.length; ++i) {
+                    if (deps[i] === undefined) {
+                        return false;
+                    }
+                }
+                return true;
+            },
+            /**
              * Manages the component dependency group.
              * @method manageDependencies
              * @param  {string}   [key=Facet.Parameters]  -  dependency group  

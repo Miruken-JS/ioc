@@ -31,8 +31,7 @@ export const InjectionPolicy = Base.extend(ComponentPolicy, {
         // Dependencies will be merged from inject definitions
         // starting from most derived unitl no more remain or the
         // current definition is fully specified (no holes).
-        const dependencies = componentModel.getDependencies();
-        if (dependencies && dependencies.indexOf(undefined) < 0) {
+        if (componentModel.allDependenciesDefined()) {
             return;
         }
         let clazz = componentModel.implementation;
@@ -46,12 +45,7 @@ export const InjectionPolicy = Base.extend(ComponentPolicy, {
                             inject = inject();
                         }
                         manager.merge(inject);
-                        for (var i = 0; i < inject.length; ++i) {
-                            if (inject[i] === undefined) {
-                                break;
-                            }
-                        }
-                        if (i === inject.length) {
+                        if (componentModel.allDependenciesDefined()) {
                             return;
                         }
                     }
