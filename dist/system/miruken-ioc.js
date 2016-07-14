@@ -42,17 +42,17 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
         var toplevel = _toplevelProtocols(clazz);
         for (var i = 0; i < toplevel.length; ++i) {
             var protocol = toplevel[i];
-            if (protocol[Meatadata].getAllProtocols().indexOf(preference) >= 0) {
+            if (protocol[Meatadata].allProtocols.indexOf(preference) >= 0) {
                 matches.push(protocol);
             }
         }
     }
 
     function _toplevelProtocols(type) {
-        var protocols = type[Metadata].getAllProtocols(),
+        var protocols = type[Metadata].allProtocols,
             toplevel = protocols.slice(0);
         for (var i = 0; i < protocols.length; ++i) {
-            var parents = protocols[i][Metadata].getAllProtocols();
+            var parents = protocols[i][Metadata].allProtocols;
             for (var ii = 0; ii < parents.length; ++ii) {
                 var index = toplevel.indexOf(parents[ii]);
                 if (index >= 0) toplevel.splice(index, 1);
@@ -914,9 +914,14 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
                     this.extend({
                         getClasses: function getClasses() {
                             var classes = [];
-                            pkg.getClasses(names, function (clazz) {
-                                return classes.push(clazz);
-                            });
+                            names = names || Object.keys(pkg);
+                            for (var i = 0; i < names.length; ++i) {
+                                var name = names[i],
+                                    member = pkg[name];
+                                if (member != null) {
+                                    classes.push({ name: name, member: member });
+                                }
+                            }
                             return classes;
                         }
                     });
@@ -1028,7 +1033,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
                         },
                         anyService: function anyService() {
                             return selectKeys(function (keys, clazz) {
-                                var services = clazz[Metadata].getAllProtocols();
+                                var services = clazz[Metadata].allProtocols;
                                 if (services.length > 0) {
                                     keys.push(services[0]);
                                 }
@@ -1036,7 +1041,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
                         },
                         allServices: function allServices() {
                             return selectKeys(function (keys, clazz) {
-                                return keys.push.apply(keys, _toConsumableArray(clazz[Metadata].getAllProtocols()));
+                                return keys.push.apply(keys, _toConsumableArray(clazz[Metadata].allProtocols));
                             });
                         },
                         mostSpecificService: function mostSpecificService(service) {
@@ -1140,7 +1145,9 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
                                         inject = inject();
                                     }
                                     manager.merge(inject);
-                                    if (inject.indexOf(undefined) < 0) {
+                                    if (inject.some(function (i) {
+                                        return i === undefined;
+                                    })) {
                                         return;
                                     }
                                 }

@@ -978,8 +978,15 @@ export const FromPackageBuilder = FromBuilder.extend({
         this.base();
         this.extend({
             getClasses() {
-                const classes = [];
-                pkg.getClasses(names, clazz => classes.push(clazz));
+                const classes = [];                
+                names = names || Object.keys(pkg);
+                for (let i = 0; i < names.length; ++i) {
+                    const name   = names[i],
+                          member = pkg[name];
+                    if (member != null) {
+                        classes.push({ name, member });
+                    }
+                }
                 return classes;
             }
         });
@@ -1124,7 +1131,7 @@ export const KeyBuilder = Base.extend({
              */
             anyService() {
                 return selectKeys((keys, clazz) => {
-                    const services = clazz[Metadata].getAllProtocols();
+                    const services = clazz[Metadata].allProtocols;
                     if (services.length > 0) {
                         keys.push(services[0]);
                     }
@@ -1136,7 +1143,7 @@ export const KeyBuilder = Base.extend({
              * @returns {miruken.ioc.BasedOnBuilder} based on builder.
              */
             allServices() {
-                return selectKeys((keys, clazz) => keys.push(...clazz[Metadata].getAllProtocols()));
+                return selectKeys((keys, clazz) => keys.push(...clazz[Metadata].allProtocols));
             },
             /**
              * Uses the most specific {{#crossLink "miruken.Protocol"}}{{/crossLink}} 
@@ -1266,17 +1273,17 @@ function _addMatchingProtocols(clazz, preference, matches) {
     const toplevel = _toplevelProtocols(clazz);
     for (let i = 0; i < toplevel.length; ++i) {
         const protocol = toplevel[i];
-        if (protocol[Meatadata].getAllProtocols().indexOf(preference) >= 0) {
+        if (protocol[Meatadata].allProtocols.indexOf(preference) >= 0) {
             matches.push(protocol);
         }
     }
 }
 
 function _toplevelProtocols(type) {
-    const protocols = type[Metadata].getAllProtocols(),
+    const protocols = type[Metadata].allProtocols,
           toplevel  = protocols.slice(0);
     for (let i = 0; i < protocols.length; ++i) {
-        const parents = protocols[i][Metadata].getAllProtocols();
+        const parents = protocols[i][Metadata].allProtocols;
         for (let ii = 0; ii < parents.length; ++ii) {
             const index = toplevel.indexOf(parents[ii]);
             if (index >= 0) toplevel.splice(index, 1);
@@ -1312,7 +1319,7 @@ export const InjectionPolicy = Base.extend(ComponentPolicy, {
                             inject = inject();
                         }
                         manager.merge(inject);
-                        if (inject.indexOf(undefined) < 0) {
+                        if (inject.some(i => i === undefined)) {
                             return;
                         }
                     }

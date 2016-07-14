@@ -19,8 +19,8 @@ import {
 
 import { ComponentPolicy } from '../src/policy';
 import {
-    ComponentModel, ComponentModelError,
-    $component } from '../src/component';
+    ComponentModel, ComponentModelError, $component
+} from '../src/component';
 
 import { TransientLifestyle } from '../src/lifestyle';
 import { Container } from '../src/container';
@@ -28,7 +28,7 @@ import { IoContainer } from '../src/ioc';
 
 import { expect } from 'chai';
 
-import * as car from './car';
+import * as car from './car-model';
 
 describe("DependencyModel", () => {
     describe("#dependency", () => {
