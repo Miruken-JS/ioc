@@ -40,14 +40,18 @@ export const InjectionPolicy = Base.extend(ComponentPolicy, {
             while (clazz && (clazz !== Base)) {
                 const injects = [clazz.prototype.$inject, clazz.prototype.inject,
                                  clazz.$inject, clazz.inject];
-                for (let i = 0; i < injects.length; ++i) {
-                    let inject = injects[i];
+                for (let inject of injects) {
                     if (inject !== undefined) {
                         if ($isFunction(inject)) {
                             inject = inject();
                         }
                         manager.merge(inject);
-                        if (inject.some(i => i === undefined)) {
+                        for (var i = 0; i < inject.length; ++i) {
+                            if (inject[i] === undefined) {
+                                break;
+                            }
+                        }
+                        if (i === inject.length) {
                             return;
                         }
                     }

@@ -60,7 +60,7 @@ export const FromBuilder = Base.extend(Registration, {
                     });
                 }
                 return Promise.all(container.register(registrations))
-                    .then(registrations => _unregisterBatch(registrations));
+                    .then(_unregisterBatch);
             }
         });
     }
@@ -358,9 +358,7 @@ export function $classes(from, names) {
  * @param  {Array}    [...names]  -  optional member name filter
  * @for miruken.ioc.$
  */    
-$classes.fromPackage = function (pkg, names) {
-    return new FromPackageBuilder(pkg, names);
-};
+$classes.fromPackage = (pkg, names) => new FromPackageBuilder(pkg, names);
 
 function _unregisterBatch(registrations) {
     return function () {
