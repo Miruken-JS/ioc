@@ -81,9 +81,8 @@ export const FromPackageBuilder = FromBuilder.extend({
             getClasses() {
                 const classes = [];                
                 names = names || Object.keys(pkg);
-                for (let i = 0; i < names.length; ++i) {
-                    const name   = names[i],
-                          member = pkg[name];
+                for (let name of names) {
+                    const member = pkg[name];
                     if (member != null && $isClass(member)) {
                         classes.push({ name, member });
                     }
@@ -167,8 +166,7 @@ export const BasedOnBuilder = Base.extend(Registration, {
                 if ((_if && !_if(clazz)) || (_unless && _unless(clazz))) {
                     return;
                 }
-                for (let i = 0; i < constraints.length; ++i) {
-                    const constraint = constraints[i];
+                for (let constraint of constraints) {
                     if ($isProtocol(constraint)) {
                         if (!constraint.adoptedBy(clazz)) {
                             continue;
@@ -257,16 +255,14 @@ export const KeyBuilder = Base.extend({
                     if ($isProtocol(service)) {
                         _addMatchingProtocols(clazz, service, keys);
                     } else {
-                        for (let i = 0; i < constraints.length; ++i) {
-                            const constraint = constraints[i];
+                        for (let constraint of constraints) {
                             if ($isFunction(constraint)) {
                                 _addMatchingProtocols(clazz, constraint, keys);
                             }
                         }
                     }
                     if (keys.length === 0) {
-                        for (let i = 0; i < constraints.length; ++i) {
-                            const constraint = constraints[i];
+                        for (let constraint of constraints) {
                             if (constraint !== Base && constraint !== Object) {
                                 if ($isProtocol(constraint)) {
                                     if (constraint.adoptedBy(clazz)) {
@@ -362,16 +358,15 @@ $classes.fromPackage = (pkg, names) => new FromPackageBuilder(pkg, names);
 
 function _unregisterBatch(registrations) {
     return function () {
-        for (let i = 0; i < registrations.length; ++i) {
-            registrations[i]();
+        for (let registration of registrations) {
+            registration();
         }
     };
 }
 
 function _addMatchingProtocols(clazz, preference, matches) {
     const toplevel = _toplevelProtocols(clazz);
-    for (let i = 0; i < toplevel.length; ++i) {
-        const protocol = toplevel[i];
+    for (let protocol of toplevel) {
         if (protocol[Metadata].allProtocols.indexOf(preference) >= 0) {
             matches.push(protocol);
         }
@@ -381,10 +376,10 @@ function _addMatchingProtocols(clazz, preference, matches) {
 function _toplevelProtocols(type) {
     const protocols = type[Metadata].allProtocols,
           toplevel  = protocols.slice(0);
-    for (let i = 0; i < protocols.length; ++i) {
-        const parents = protocols[i][Metadata].allProtocols;
-        for (let ii = 0; ii < parents.length; ++ii) {
-            const index = toplevel.indexOf(parents[ii]);
+    for (let protocol of protocols) {
+        const parents = protocol[Metadata].allProtocols;
+        for (let parent of parents) {
+            const index = toplevel.indexOf(parent);
             if (index >= 0) toplevel.splice(index, 1);
         }
     }

@@ -140,7 +140,7 @@ export const CraigsJunk = Base.extend(Junkyard, $inferProperties, {
 
 export const LogInterceptor = Interceptor.extend({
     intercept(invocation) {
-        console.log(`Called ${invocation.method} with (${invocation.args.join(", ")}) from ${invocation.source}`);
+        console.log(`Called ${invocation.method} with (${invocation.args.join(", ")}) from ${invocation.source.name}`);
         const result = invocation.proceed();
         console.log(`    And returned ${result}`);
         return result;

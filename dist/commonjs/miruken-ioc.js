@@ -117,17 +117,25 @@ var DependencyManager = exports.DependencyManager = _mirukenCore.ArrayManager.ex
 
 var DependencyResolution = exports.DependencyResolution = _mirukenCallback.Resolution.extend({
     constructor: function constructor(key, parent, many) {
-        var _class = void 0,
+        var _type = void 0,
             _handler = void 0;
         this.base(key, many);
         this.extend({
-            claim: function claim(handler, clazz) {
+            claim: function claim(handler, type) {
                 if (this.isResolvingDependency(handler)) {
                     return false;
                 }
                 _handler = handler;
-                _class = clazz;
+                _type = type;
                 return true;
+            },
+
+            get parent() {
+                return parent;
+            },
+
+            get type() {
+                return _type;
             },
             isResolvingDependency: function isResolvingDependency(handler) {
                 return handler === _handler || parent && parent.isResolvingDependency(handler);
@@ -136,7 +144,7 @@ var DependencyResolution = exports.DependencyResolution = _mirukenCallback.Resol
                 var invariant = _mirukenCore.$eq.test(key),
                     rawKey = _mirukenCore.Modifier.unwrap(key),
                     keyDisplay = invariant ? '`' + rawKey + '`' : rawKey,
-                    display = _class ? '(' + keyDisplay + ' <- ' + _class + ')' : keyDisplay;
+                    display = _type ? '(' + keyDisplay + ' <- ' + _type + ')' : keyDisplay;
                 return parent ? display + ' <= ' + parent.formattedDependencyChain() : display;
             }
         });
@@ -144,7 +152,7 @@ var DependencyResolution = exports.DependencyResolution = _mirukenCallback.Resol
 });
 
 function DependencyResolutionError(dependency, message) {
-    this.message = message;
+    this.message = message || 'Dependency ' + dependency.formattedDependencyChain() + ' could not be resolved.';
 
     this.dependency = dependency;
     if (Error.captureStackTrace) {
@@ -363,6 +371,16 @@ var ComponentModel = exports.ComponentModel = _mirukenCore.Base.extend(_mirukenV
                     throw new TypeError(value + ' is not an array.');
                 }
                 _burden[key] = value.map(DependencyModel);
+            },
+            allDependenciesDefined: function allDependenciesDefined(key) {
+                var deps = _burden[key || _mirukenCore.Facet.Parameters];
+                if (!deps) return false;
+                for (var i = 0; i < deps.length; ++i) {
+                    if (deps[i] === undefined) {
+                        return false;
+                    }
+                }
+                return true;
             },
             manageDependencies: function manageDependencies(key, actions) {
                 if (arguments.length === 1) {
@@ -606,9 +624,7 @@ var FromBuilder = exports.FromBuilder = _mirukenCore.Base.extend(Registration, {
                         return new installer();
                     });
                 }
-                return Promise.all(container.register(registrations)).then(function (registrations) {
-                    return _unregisterBatch(registrations);
-                });
+                return Promise.all(container.register(registrations)).then(_unregisterBatch);
             }
         });
     }
@@ -621,13 +637,34 @@ var FromPackageBuilder = exports.FromPackageBuilder = FromBuilder.extend({
             getClasses: function getClasses() {
                 var classes = [];
                 names = names || Object.keys(pkg);
-                for (var i = 0; i < names.length; ++i) {
-                    var name = names[i],
-                        member = pkg[name];
-                    if (member != null) {
-                        classes.push({ name: name, member: member });
+                var _iteratorNormalCompletion = true;
+                var _didIteratorError = false;
+                var _iteratorError = undefined;
+
+                try {
+                    for (var _iterator = names[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                        var name = _step.value;
+
+                        var member = pkg[name];
+                        if (member != null && (0, _mirukenCore.$isClass)(member)) {
+                            classes.push({ name: name, member: member });
+                        }
+                    }
+                } catch (err) {
+                    _didIteratorError = true;
+                    _iteratorError = err;
+                } finally {
+                    try {
+                        if (!_iteratorNormalCompletion && _iterator.return) {
+                            _iterator.return();
+                        }
+                    } finally {
+                        if (_didIteratorError) {
+                            throw _iteratorError;
+                        }
                     }
                 }
+
                 return classes;
             }
         });
@@ -688,21 +725,42 @@ var BasedOnBuilder = exports.BasedOnBuilder = _mirukenCore.Base.extend(Registrat
                 if (_if2 && !_if2(clazz) || _unless && _unless(clazz)) {
                     return;
                 }
-                for (var i = 0; i < constraints.length; ++i) {
-                    var constraint = constraints[i];
-                    if ((0, _mirukenCore.$isProtocol)(constraint)) {
-                        if (!constraint.adoptedBy(clazz)) {
-                            continue;
+                var _iteratorNormalCompletion2 = true;
+                var _didIteratorError2 = false;
+                var _iteratorError2 = undefined;
+
+                try {
+                    for (var _iterator2 = constraints[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                        var constraint = _step2.value;
+
+                        if ((0, _mirukenCore.$isProtocol)(constraint)) {
+                            if (!constraint.adoptedBy(clazz)) {
+                                continue;
+                            }
+                        } else if ((0, _mirukenCore.$isClass)(constraint)) {
+                            if (!(clazz.prototype instanceof constraint)) {
+                                continue;
+                            }
                         }
-                    } else if ((0, _mirukenCore.$isClass)(constraint)) {
-                        if (!(clazz.prototype instanceof constraint)) {
-                            continue;
+                        if (basedOn.indexOf(constraint) < 0) {
+                            basedOn.push(constraint);
                         }
                     }
-                    if (basedOn.indexOf(constraint) < 0) {
-                        basedOn.push(constraint);
+                } catch (err) {
+                    _didIteratorError2 = true;
+                    _iteratorError2 = err;
+                } finally {
+                    try {
+                        if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                            _iterator2.return();
+                        }
+                    } finally {
+                        if (_didIteratorError2) {
+                            throw _iteratorError2;
+                        }
                     }
                 }
+
                 if (basedOn.length > 0 || constraints.length === 0) {
                     var keys = this.withKeys.getKeys(clazz, basedOn, name),
                         component = $component(keys).boundTo(clazz);
@@ -751,25 +809,65 @@ var KeyBuilder = exports.KeyBuilder = _mirukenCore.Base.extend({
                     if ((0, _mirukenCore.$isProtocol)(service)) {
                         _addMatchingProtocols(clazz, service, keys);
                     } else {
-                        for (var i = 0; i < constraints.length; ++i) {
-                            var constraint = constraints[i];
-                            if ((0, _mirukenCore.$isFunction)(constraint)) {
-                                _addMatchingProtocols(clazz, constraint, keys);
+                        var _iteratorNormalCompletion3 = true;
+                        var _didIteratorError3 = false;
+                        var _iteratorError3 = undefined;
+
+                        try {
+                            for (var _iterator3 = constraints[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+                                var constraint = _step3.value;
+
+                                if ((0, _mirukenCore.$isFunction)(constraint)) {
+                                    _addMatchingProtocols(clazz, constraint, keys);
+                                }
+                            }
+                        } catch (err) {
+                            _didIteratorError3 = true;
+                            _iteratorError3 = err;
+                        } finally {
+                            try {
+                                if (!_iteratorNormalCompletion3 && _iterator3.return) {
+                                    _iterator3.return();
+                                }
+                            } finally {
+                                if (_didIteratorError3) {
+                                    throw _iteratorError3;
+                                }
                             }
                         }
                     }
                     if (keys.length === 0) {
-                        for (var _i = 0; _i < constraints.length; ++_i) {
-                            var _constraint = constraints[_i];
-                            if (_constraint !== _mirukenCore.Base && _constraint !== Object) {
-                                if ((0, _mirukenCore.$isProtocol)(_constraint)) {
-                                    if (_constraint.adoptedBy(clazz)) {
+                        var _iteratorNormalCompletion4 = true;
+                        var _didIteratorError4 = false;
+                        var _iteratorError4 = undefined;
+
+                        try {
+                            for (var _iterator4 = constraints[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+                                var _constraint = _step4.value;
+
+                                if (_constraint !== _mirukenCore.Base && _constraint !== Object) {
+                                    if ((0, _mirukenCore.$isProtocol)(_constraint)) {
+                                        if (_constraint.adoptedBy(clazz)) {
+                                            keys.push(_constraint);
+                                            break;
+                                        }
+                                    } else if (clazz === _constraint || clazz.prototype instanceof _constraint) {
                                         keys.push(_constraint);
                                         break;
                                     }
-                                } else if (clazz === _constraint || clazz.prototype instanceof _constraint) {
-                                    keys.push(_constraint);
-                                    break;
+                                }
+                            }
+                        } catch (err) {
+                            _didIteratorError4 = true;
+                            _iteratorError4 = err;
+                        } finally {
+                            try {
+                                if (!_iteratorNormalCompletion4 && _iterator4.return) {
+                                    _iterator4.return();
+                                }
+                            } finally {
+                                if (_didIteratorError4) {
+                                    throw _iteratorError4;
                                 }
                             }
                         }
@@ -829,18 +927,59 @@ $classes.fromPackage = function (pkg, names) {
 
 function _unregisterBatch(registrations) {
     return function () {
-        for (var i = 0; i < registrations.length; ++i) {
-            registrations[i]();
+        var _iteratorNormalCompletion5 = true;
+        var _didIteratorError5 = false;
+        var _iteratorError5 = undefined;
+
+        try {
+            for (var _iterator5 = registrations[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+                var registration = _step5.value;
+
+                registration();
+            }
+        } catch (err) {
+            _didIteratorError5 = true;
+            _iteratorError5 = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion5 && _iterator5.return) {
+                    _iterator5.return();
+                }
+            } finally {
+                if (_didIteratorError5) {
+                    throw _iteratorError5;
+                }
+            }
         }
     };
 }
 
 function _addMatchingProtocols(clazz, preference, matches) {
     var toplevel = _toplevelProtocols(clazz);
-    for (var i = 0; i < toplevel.length; ++i) {
-        var protocol = toplevel[i];
-        if (protocol[Meatadata].allProtocols.indexOf(preference) >= 0) {
-            matches.push(protocol);
+    var _iteratorNormalCompletion6 = true;
+    var _didIteratorError6 = false;
+    var _iteratorError6 = undefined;
+
+    try {
+        for (var _iterator6 = toplevel[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+            var protocol = _step6.value;
+
+            if (protocol[_mirukenCore.Metadata].allProtocols.indexOf(preference) >= 0) {
+                matches.push(protocol);
+            }
+        }
+    } catch (err) {
+        _didIteratorError6 = true;
+        _iteratorError6 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion6 && _iterator6.return) {
+                _iterator6.return();
+            }
+        } finally {
+            if (_didIteratorError6) {
+                throw _iteratorError6;
+            }
         }
     }
 }
@@ -848,40 +987,101 @@ function _addMatchingProtocols(clazz, preference, matches) {
 function _toplevelProtocols(type) {
     var protocols = type[_mirukenCore.Metadata].allProtocols,
         toplevel = protocols.slice(0);
-    for (var i = 0; i < protocols.length; ++i) {
-        var parents = protocols[i][_mirukenCore.Metadata].allProtocols;
-        for (var ii = 0; ii < parents.length; ++ii) {
-            var index = toplevel.indexOf(parents[ii]);
-            if (index >= 0) toplevel.splice(index, 1);
+    var _iteratorNormalCompletion7 = true;
+    var _didIteratorError7 = false;
+    var _iteratorError7 = undefined;
+
+    try {
+        for (var _iterator7 = protocols[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+            var protocol = _step7.value;
+
+            var parents = protocol[_mirukenCore.Metadata].allProtocols;
+            var _iteratorNormalCompletion8 = true;
+            var _didIteratorError8 = false;
+            var _iteratorError8 = undefined;
+
+            try {
+                for (var _iterator8 = parents[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+                    var parent = _step8.value;
+
+                    var index = toplevel.indexOf(parent);
+                    if (index >= 0) toplevel.splice(index, 1);
+                }
+            } catch (err) {
+                _didIteratorError8 = true;
+                _iteratorError8 = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion8 && _iterator8.return) {
+                        _iterator8.return();
+                    }
+                } finally {
+                    if (_didIteratorError8) {
+                        throw _iteratorError8;
+                    }
+                }
+            }
+        }
+    } catch (err) {
+        _didIteratorError7 = true;
+        _iteratorError7 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion7 && _iterator7.return) {
+                _iterator7.return();
+            }
+        } finally {
+            if (_didIteratorError7) {
+                throw _iteratorError7;
+            }
         }
     }
+
     return toplevel;
 }
 
 var InjectionPolicy = exports.InjectionPolicy = _mirukenCore.Base.extend(ComponentPolicy, {
     applyPolicy: function applyPolicy(componentModel) {
-        var dependencies = componentModel.getDependencies();
-        if (dependencies && dependencies.indexOf(undefined) < 0) {
+        if (componentModel.allDependenciesDefined()) {
             return;
         }
         var clazz = componentModel.implementation;
         componentModel.manageDependencies(function (manager) {
             while (clazz && clazz !== _mirukenCore.Base) {
                 var injects = [clazz.prototype.$inject, clazz.prototype.inject, clazz.$inject, clazz.inject];
-                for (var i = 0; i < injects.length; ++i) {
-                    var inject = injects[i];
-                    if (inject !== undefined) {
-                        if ((0, _mirukenCore.$isFunction)(inject)) {
-                            inject = inject();
+                var _iteratorNormalCompletion9 = true;
+                var _didIteratorError9 = false;
+                var _iteratorError9 = undefined;
+
+                try {
+                    for (var _iterator9 = injects[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+                        var inject = _step9.value;
+
+                        if (inject !== undefined) {
+                            if ((0, _mirukenCore.$isFunction)(inject)) {
+                                inject = inject();
+                            }
+                            manager.merge(inject);
+                            if (componentModel.allDependenciesDefined()) {
+                                return;
+                            }
                         }
-                        manager.merge(inject);
-                        if (inject.some(function (i) {
-                            return i === undefined;
-                        })) {
-                            return;
+                    }
+                } catch (err) {
+                    _didIteratorError9 = true;
+                    _iteratorError9 = err;
+                } finally {
+                    try {
+                        if (!_iteratorNormalCompletion9 && _iterator9.return) {
+                            _iterator9.return();
+                        }
+                    } finally {
+                        if (_didIteratorError9) {
+                            throw _iteratorError9;
                         }
                     }
                 }
+
                 clazz = (0, _mirukenCore.$ancestorOf)(clazz);
             }
         });
@@ -909,12 +1109,33 @@ var IoContainer = exports.IoContainer = _mirukenCallback.CallbackHandler.extend(
 
                 policies = (0, _mirukenCore.$flatten)(policies, true);
                 policies = policies.length > 0 ? _policies.concat(policies) : _policies;
-                for (var i = 0; i < policies.length; ++i) {
-                    var policy = policies[i];
-                    if ((0, _mirukenCore.$isFunction)(policy.applyPolicy)) {
-                        policy.applyPolicy(componentModel, policies);
+                var _iteratorNormalCompletion10 = true;
+                var _didIteratorError10 = false;
+                var _iteratorError10 = undefined;
+
+                try {
+                    for (var _iterator10 = policies[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+                        var policy = _step10.value;
+
+                        if ((0, _mirukenCore.$isFunction)(policy.applyPolicy)) {
+                            policy.applyPolicy(componentModel, policies);
+                        }
+                    }
+                } catch (err) {
+                    _didIteratorError10 = true;
+                    _iteratorError10 = err;
+                } finally {
+                    try {
+                        if (!_iteratorNormalCompletion10 && _iterator10.return) {
+                            _iterator10.return();
+                        }
+                    } finally {
+                        if (_didIteratorError10) {
+                            throw _iteratorError10;
+                        }
                     }
                 }
+
                 var validation = (0, _mirukenValidate.Validator)(_mirukenCallback.$composer).validate(componentModel);
                 if (!validation.valid) {
                     throw new ComponentModelError(componentModel, validation);
@@ -946,12 +1167,12 @@ var IoContainer = exports.IoContainer = _mirukenCallback.CallbackHandler.extend(
     },
     registerHandler: function registerHandler(componentModel, policies) {
         var key = componentModel.key;
-        var clazz = componentModel.implementation,
+        var type = componentModel.implementation,
             lifestyle = componentModel.lifestyle || new SingletonLifestyle(),
             factory = componentModel.factory,
             burden = componentModel.burden;
         key = componentModel.invariant ? (0, _mirukenCore.$eq)(key) : key;
-        return _registerHandler(this, key, clazz, lifestyle, factory, burden, policies);
+        return _registerHandler(this, key, type, lifestyle, factory, burden, policies);
     },
     invoke: function invoke(fn, dependencies, ctx) {
         var inject = fn.$inject || fn.inject;
@@ -975,12 +1196,12 @@ var IoContainer = exports.IoContainer = _mirukenCallback.CallbackHandler.extend(
     }
 });
 
-function _registerHandler(container, key, clazz, lifestyle, factory, burden, policies) {
+function _registerHandler(container, key, type, lifestyle, factory, burden, policies) {
     return (0, _mirukenCallback.$provide)(container, key, function handler(resolution, composer) {
         if (!(resolution instanceof DependencyResolution)) {
             resolution = new DependencyResolution(resolution.key);
         }
-        if (!resolution.claim(handler, clazz)) {
+        if (!resolution.claim(handler, type)) {
             return _mirukenCallback.$NOT_HANDLED;
         }
         return lifestyle.resolve(function (configure) {
@@ -1125,17 +1346,16 @@ function _resolveDependency(dependency, required, promise, child, all, composer)
     var result = all ? composer.resolveAll(dependency) : composer.resolve(dependency);
     if (result === undefined) {
         if (required) {
-            var error = new DependencyResolutionError(dependency, 'Dependency ' + dependency.formattedDependencyChain() + ' could not be resolved.');
+            var error = new DependencyResolutionError(dependency);
             if (_mirukenCore.$instant.test(dependency.key)) {
                 throw error;
             }
             return Promise.reject(error);
         }
         return result;
-    } else if (child && !all) {
-        result = (0, _mirukenCore.$isPromise)(result) ? result.then(function (parent) {
-            return _createChild(parent);
-        }) : _createChild(result);
+    }
+    if (child && !all) {
+        result = (0, _mirukenCore.$isPromise)(result) ? result.then(_createChild) : _createChild(result);
     }
     return promise ? Promise.resolve(result) : result;
 }

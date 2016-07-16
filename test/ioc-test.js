@@ -1,7 +1,8 @@
 import {
-    Base, Facet, $inferProperties, $isPromise,
-    $using, $decorated, $promise, $optional, $eq,
-    $use, $lazy, $instant, $eval, $child
+    Base, Facet, Modifier, $inferProperties,
+    $isPromise, $using, $decorated, $promise,
+    $optional, $eq, $use, $lazy, $instant,
+    $eval, $child
 } from 'miruken-core';
 
 import { $provide } from 'miruken-callback';
@@ -824,7 +825,10 @@ describe("IoContainer", () => {
                 expect(order).to.be.instanceOf(Order);
                 Promise.resolve(order.getCar()).catch(error => {
                     expect(error).to.be.instanceof(DependencyResolutionError);
-                    expect(error.message).to.match(/Dependency.*Engine.*<=.*Car.*could not be resolved./);
+                    expect(error.dependency.key).to.eql(car.Engine);
+                    expect(error.dependency.parent.key).to.eql(car.Car);
+                    expect(error.dependency.parent.type).to.equal(car.Ferrari);
+                    //expect(error.message).to.match(/Dependency.*Engine.*<=.*Car.*could not be resolved./);
                     done();
                 });
             });
@@ -835,7 +839,10 @@ describe("IoContainer", () => {
                                $component(car.Engine).boundTo(car.V12));
             Promise.resolve(container.resolve(car.Car)).catch(error => {
                 expect(error).to.be.instanceof(DependencyResolutionError);
-                expect(error.message).to.match(/Dependency.*`.*car.V12.*`.*<=.*Car.*could not be resolved./);
+                expect($eq.test(error.dependency.key)).to.be.true;
+                expect(Modifier.unwrap(error.dependency.key)).to.eql(car.V12);
+                expect(error.dependency.parent.type).to.equal(car.Ferrari);                
+                //expect(error.message).to.match(/Dependency.*`.*V12.*`.*<=.*Car.*could not be resolved./);
                 container.register($component(car.V12));
                 Promise.resolve(container.resolve(car.Car)).then(c => {
                     expect(c).to.be.instanceOf(car.Ferrari);
@@ -1023,8 +1030,10 @@ describe("IoContainer", () => {
             container.register($component(car.Ferrari).dependsOn($container(car.Engine)));
             Promise.resolve(container.resolve(car.Car)).catch(error => {
                 expect(error).to.be.instanceof(DependencyResolutionError);
-                expect(error.message).to.match(/Dependency.*car.Engine.*<= (.*Car.*<-.*Ferrari.*)could not be resolved./);
-                expect(error.dependency.key).to.equal(car.Engine);
+                expect(error.dependency.key).to.eql(car.Engine);
+                expect(error.dependency.parent.key).to.eql(car.Car);
+                expect(error.dependency.parent.type).to.equal(car.Ferrari);
+                // expect(error.message).to.match(/Dependency.*car.Engine.*<= (.*Car.*<-.*Ferrari.*)could not be resolved./);
                 done();
             });
         });
@@ -1094,19 +1103,25 @@ describe("IoContainer", () => {
             container.register($component(car.Ferrari));
             Promise.resolve(container.resolve(car.Car)).catch(error => {
                 expect(error).to.be.instanceof(DependencyResolutionError);
-                expect(error.message).to.match(/Dependency.*car.Engine.*<= (.*Car.*<-.*Ferrari.*)could not be resolved./);
-                expect(error.dependency.key).to.equal(car.Engine);
+                expect(error.dependency.key).to.eql(car.Engine);
+                expect(error.dependency.parent.key).to.eql(car.Car);
+                expect(error.dependency.parent.type).to.equal(car.Ferrari);                
+                //expect(error.message).to.match(/Dependency.*car.Engine.*<= (.*Car.*<-.*Ferrari.*)could not be resolved./);
                 done();
             });
         });
-
+        
         it("should detect circular dependencies", done => {
             container.register($component(car.Ferrari),
                                $component(car.V12).dependsOn($use(917), $use(6.3), car.Engine));
             Promise.resolve(container.resolve(car.Car)).catch(error => {
                 expect(error).to.be.instanceof(DependencyResolutionError);
-                expect(error.message).to.match(/Dependency.*Engine.*<= (.*Engine.*<-.*V12.*) <= (.*Car.*<-.*Ferrari.*) could not be resolved./);
-                expect(error.dependency.key).to.equal(car.Engine);
+                expect(error.dependency.key).to.eql(car.Engine);
+                expect(error.dependency.parent.key).to.eql(car.Engine);
+                expect(error.dependency.parent.type).to.equal(car.V12);
+                expect(error.dependency.parent.parent.key).to.eql(car.Car);
+                expect(error.dependency.parent.parent.type).to.equal(car.Ferrari);
+                //expect(error.message).to.match(/Dependency.*Engine.*<= (.*Engine.*<-.*V12.*) <= (.*Car.*<-.*Ferrari.*) could not be resolved./);
                 done();
             });
         });
@@ -1187,9 +1202,15 @@ describe("IoContainer", () => {
         });
 
         it("should fail if dependencies not resolved", () => {
-            expect(() => {
-                container.invoke(supercharge);  
-            }).to.throw(DependencyResolutionError, "Dependency [base2.ioc_test.car.Engine] could not be resolved.");
+            try {
+                container.invoke(supercharge);
+                expect.fail();                
+            }
+            catch (error) {
+                expect(error).to.be.instanceof(DependencyResolutionError);
+                expect($instant.test(error.dependency.key)).to.be.true;
+                expect(Modifier.unwrap(error.dependency.key)).to.eql(car.Engine);
+            }
         });
     });
 

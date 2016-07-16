@@ -253,17 +253,34 @@ export const DependencyManager = ArrayManager.extend({
  */
 export const DependencyResolution = Resolution.extend({
     constructor(key, parent, many) {
-        let _class, _handler;
+        let _type, _handler;
         this.base(key, many);
         this.extend({
-            claim(handler, clazz) { 
+            /**
+             * Marks the handler as claiming the dependency.
+             * @method claim
+             * @param   {Function}  handler  -  dependency handler
+             * @param   {Function}  type     -  dependency type
+             * @returns {boolean} true if claimed, false otherwise.
+             */                            
+            claim(handler, type) { 
                 if (this.isResolvingDependency(handler)) {
                     return false;
                 }
                 _handler = handler;
-                _class   = clazz;
+                _type    = type;
                 return true;
             },
+            /**
+             * Gets the parent dependency
+             * @property {miruken.ioc.DependencyResolution} parent
+             */
+            get parent() { return parent; },            
+            /**
+             * Gets the component requesting the dependency.
+             * @property {Object} component
+             */
+            get type() { return _type; },
             /**
              * Determines if the handler is in the process of resolving a dependency.
              * @method isResolvingDependency
@@ -281,12 +298,12 @@ export const DependencyResolution = Resolution.extend({
              */                
             formattedDependencyChain() {
                 const invariant  = $eq.test(key),
-                    rawKey     = Modifier.unwrap(key),
-                    keyDisplay = invariant ? `\`${rawKey}\`` : rawKey,
-                    display    = _class ? `(${keyDisplay} <- ${_class})` : keyDisplay;
+                      rawKey     = Modifier.unwrap(key),
+                      keyDisplay = invariant ? `\`${rawKey}\`` : rawKey,
+                      display    = _type ? `(${keyDisplay} <- ${_type})` : keyDisplay;
                 return parent 
-                    ? `${display} <= ${parent.formattedDependencyChain()}`
-                    : display;
+                     ? `${display} <= ${parent.formattedDependencyChain()}`
+                     : display;
             }
         });
     }
@@ -305,7 +322,9 @@ export function DependencyResolutionError(dependency, message) {
      * Gets the error message.
      * @property {string} message
      */
-    this.message = message;
+    this.message = message ||
+        `Dependency ${dependency.formattedDependencyChain()} could not be resolved.`;
+
     /**
      * Gets the failing dependency resolution.
      * @property {miruken.ioc.DependencyResolution} dependency
@@ -581,6 +600,22 @@ export const ComponentModel = Base.extend($validateThat, {
                     throw new TypeError(`${value} is not an array.`);
                 }
                 _burden[key] = value.map(DependencyModel);
+            },
+            /**
+             * Determines if the component dependency group is complete.
+             * @method allDependenciesDefined
+             * @param  {string}  [key=Facet.Parameters]  -  dependency group
+             * @return {boolean} true if all dependencies defined.
+             */                            
+            allDependenciesDefined(key) {
+                const deps = _burden[key || Facet.Parameters];
+                if (!deps) return false;
+                for (let i = 0; i < deps.length; ++i) {
+                    if (deps[i] === undefined) {
+                        return false;
+                    }
+                }
+                return true;
             },
             /**
              * Manages the component dependency group.
@@ -959,7 +994,7 @@ export const FromBuilder = Base.extend(Registration, {
                     });
                 }
                 return Promise.all(container.register(registrations))
-                    .then(registrations => _unregisterBatch(registrations));
+                    .then(_unregisterBatch);
             }
         });
     }
@@ -980,10 +1015,9 @@ export const FromPackageBuilder = FromBuilder.extend({
             getClasses() {
                 const classes = [];                
                 names = names || Object.keys(pkg);
-                for (let i = 0; i < names.length; ++i) {
-                    const name   = names[i],
-                          member = pkg[name];
-                    if (member != null) {
+                for (let name of names) {
+                    const member = pkg[name];
+                    if (member != null && $isClass(member)) {
                         classes.push({ name, member });
                     }
                 }
@@ -1066,8 +1100,7 @@ export const BasedOnBuilder = Base.extend(Registration, {
                 if ((_if && !_if(clazz)) || (_unless && _unless(clazz))) {
                     return;
                 }
-                for (let i = 0; i < constraints.length; ++i) {
-                    const constraint = constraints[i];
+                for (let constraint of constraints) {
                     if ($isProtocol(constraint)) {
                         if (!constraint.adoptedBy(clazz)) {
                             continue;
@@ -1156,16 +1189,14 @@ export const KeyBuilder = Base.extend({
                     if ($isProtocol(service)) {
                         _addMatchingProtocols(clazz, service, keys);
                     } else {
-                        for (let i = 0; i < constraints.length; ++i) {
-                            const constraint = constraints[i];
+                        for (let constraint of constraints) {
                             if ($isFunction(constraint)) {
                                 _addMatchingProtocols(clazz, constraint, keys);
                             }
                         }
                     }
                     if (keys.length === 0) {
-                        for (let i = 0; i < constraints.length; ++i) {
-                            const constraint = constraints[i];
+                        for (let constraint of constraints) {
                             if (constraint !== Base && constraint !== Object) {
                                 if ($isProtocol(constraint)) {
                                     if (constraint.adoptedBy(clazz)) {
@@ -1257,23 +1288,20 @@ export function $classes(from, names) {
  * @param  {Array}    [...names]  -  optional member name filter
  * @for miruken.ioc.$
  */    
-$classes.fromPackage = function (pkg, names) {
-    return new FromPackageBuilder(pkg, names);
-};
+$classes.fromPackage = (pkg, names) => new FromPackageBuilder(pkg, names);
 
 function _unregisterBatch(registrations) {
     return function () {
-        for (let i = 0; i < registrations.length; ++i) {
-            registrations[i]();
+        for (let registration of registrations) {
+            registration();
         }
     };
 }
 
 function _addMatchingProtocols(clazz, preference, matches) {
     const toplevel = _toplevelProtocols(clazz);
-    for (let i = 0; i < toplevel.length; ++i) {
-        const protocol = toplevel[i];
-        if (protocol[Meatadata].allProtocols.indexOf(preference) >= 0) {
+    for (let protocol of toplevel) {
+        if (protocol[Metadata].allProtocols.indexOf(preference) >= 0) {
             matches.push(protocol);
         }
     }
@@ -1282,10 +1310,10 @@ function _addMatchingProtocols(clazz, preference, matches) {
 function _toplevelProtocols(type) {
     const protocols = type[Metadata].allProtocols,
           toplevel  = protocols.slice(0);
-    for (let i = 0; i < protocols.length; ++i) {
-        const parents = protocols[i][Metadata].allProtocols;
-        for (let ii = 0; ii < parents.length; ++ii) {
-            const index = toplevel.indexOf(parents[ii]);
+    for (let protocol of protocols) {
+        const parents = protocol[Metadata].allProtocols;
+        for (let parent of parents) {
+            const index = toplevel.indexOf(parent);
             if (index >= 0) toplevel.splice(index, 1);
         }
     }
@@ -1303,8 +1331,7 @@ export const InjectionPolicy = Base.extend(ComponentPolicy, {
         // Dependencies will be merged from inject definitions
         // starting from most derived unitl no more remain or the
         // current definition is fully specified (no holes).
-        const dependencies = componentModel.getDependencies();
-        if (dependencies && dependencies.indexOf(undefined) < 0) {
+        if (componentModel.allDependenciesDefined()) {
             return;
         }
         let clazz = componentModel.implementation;
@@ -1312,14 +1339,13 @@ export const InjectionPolicy = Base.extend(ComponentPolicy, {
             while (clazz && (clazz !== Base)) {
                 const injects = [clazz.prototype.$inject, clazz.prototype.inject,
                                  clazz.$inject, clazz.inject];
-                for (let i = 0; i < injects.length; ++i) {
-                    let inject = injects[i];
+                for (let inject of injects) {
                     if (inject !== undefined) {
                         if ($isFunction(inject)) {
                             inject = inject();
                         }
                         manager.merge(inject);
-                        if (inject.some(i => i === undefined)) {
+                        if (componentModel.allDependenciesDefined()) {
                             return;
                         }
                     }
@@ -1362,8 +1388,7 @@ export const IoContainer = CallbackHandler.extend(Container, {
                 policies = policies.length > 0
                          ? _policies.concat(policies)
                          : _policies;
-                for (let i = 0; i < policies.length; ++i) {
-                    const policy = policies[i];
+                for (let policy of policies) {
                     if ($isFunction(policy.applyPolicy)) {
                         policy.applyPolicy(componentModel, policies);
                     }
@@ -1388,12 +1413,12 @@ export const IoContainer = CallbackHandler.extend(Container, {
     },
     registerHandler(componentModel, policies) {
         let   key       = componentModel.key;
-        const clazz     = componentModel.implementation,
+        const type      = componentModel.implementation,
               lifestyle = componentModel.lifestyle || new SingletonLifestyle(),
               factory   = componentModel.factory,
               burden    = componentModel.burden;
         key = componentModel.invariant ? $eq(key) : key;
-        return _registerHandler(this, key, clazz, lifestyle, factory, burden, policies); 
+        return _registerHandler(this, key, type, lifestyle, factory, burden, policies); 
     },
     invoke(fn, dependencies, ctx) {
         let   inject  = fn.$inject || fn.inject;
@@ -1417,12 +1442,12 @@ export const IoContainer = CallbackHandler.extend(Container, {
     }
 });
 
-function _registerHandler(container, key, clazz, lifestyle, factory, burden, policies) {
+function _registerHandler(container, key, type, lifestyle, factory, burden, policies) {
     return $provide(container, key, function handler(resolution, composer) {
         if (!(resolution instanceof DependencyResolution)) {
             resolution = new DependencyResolution(resolution.key);
         }
-        if (!resolution.claim(handler, clazz)) {  // cycle detected
+        if (!resolution.claim(handler, type)) {  // cycle detected
             return $NOT_HANDLED;
         }
         return lifestyle.resolve(configure => {
@@ -1537,18 +1562,16 @@ function _resolveDependency(dependency, required, promise, child, all, composer)
     let result = all ? composer.resolveAll(dependency) : composer.resolve(dependency);
     if (result === undefined) {
         if (required) {
-            const error = new DependencyResolutionError(dependency,
-                `Dependency ${dependency.formattedDependencyChain()} could not be resolved.`);
+            const error = new DependencyResolutionError(dependency);
             if ($instant.test(dependency.key)) {
                 throw error;
             }
             return Promise.reject(error);
         }
         return result;
-    } else if (child && !all) {
-        result = $isPromise(result) 
-            ? result.then(parent =>  _createChild(parent))
-        : _createChild(result)
+    }
+    if (child && !all) {
+        result = $isPromise(result) ? result.then(_createChild) : _createChild(result);
     }
     return promise ? Promise.resolve(result) : result;
 }

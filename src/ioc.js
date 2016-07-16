@@ -88,8 +88,7 @@ export const IoContainer = CallbackHandler.extend(Container, {
                 policies = policies.length > 0
                          ? _policies.concat(policies)
                          : _policies;
-                for (let i = 0; i < policies.length; ++i) {
-                    const policy = policies[i];
+                for (let policy of policies) {
                     if ($isFunction(policy.applyPolicy)) {
                         policy.applyPolicy(componentModel, policies);
                     }
@@ -114,12 +113,12 @@ export const IoContainer = CallbackHandler.extend(Container, {
     },
     registerHandler(componentModel, policies) {
         let   key       = componentModel.key;
-        const clazz     = componentModel.implementation,
+        const type      = componentModel.implementation,
               lifestyle = componentModel.lifestyle || new SingletonLifestyle(),
               factory   = componentModel.factory,
               burden    = componentModel.burden;
         key = componentModel.invariant ? $eq(key) : key;
-        return _registerHandler(this, key, clazz, lifestyle, factory, burden, policies); 
+        return _registerHandler(this, key, type, lifestyle, factory, burden, policies); 
     },
     invoke(fn, dependencies, ctx) {
         let   inject  = fn.$inject || fn.inject;
@@ -143,12 +142,12 @@ export const IoContainer = CallbackHandler.extend(Container, {
     }
 });
 
-function _registerHandler(container, key, clazz, lifestyle, factory, burden, policies) {
+function _registerHandler(container, key, type, lifestyle, factory, burden, policies) {
     return $provide(container, key, function handler(resolution, composer) {
         if (!(resolution instanceof DependencyResolution)) {
             resolution = new DependencyResolution(resolution.key);
         }
-        if (!resolution.claim(handler, clazz)) {  // cycle detected
+        if (!resolution.claim(handler, type)) {  // cycle detected
             return $NOT_HANDLED;
         }
         return lifestyle.resolve(configure => {
@@ -263,18 +262,16 @@ function _resolveDependency(dependency, required, promise, child, all, composer)
     let result = all ? composer.resolveAll(dependency) : composer.resolve(dependency);
     if (result === undefined) {
         if (required) {
-            const error = new DependencyResolutionError(dependency,
-                `Dependency ${dependency.formattedDependencyChain()} could not be resolved.`);
+            const error = new DependencyResolutionError(dependency);
             if ($instant.test(dependency.key)) {
                 throw error;
             }
             return Promise.reject(error);
         }
         return result;
-    } else if (child && !all) {
-        result = $isPromise(result) 
-            ? result.then(parent =>  _createChild(parent))
-        : _createChild(result)
+    }
+    if (child && !all) {
+        result = $isPromise(result) ? result.then(_createChild) : _createChild(result);
     }
     return promise ? Promise.resolve(result) : result;
 }

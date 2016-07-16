@@ -171,17 +171,34 @@ export const DependencyManager = ArrayManager.extend({
  */
 export const DependencyResolution = Resolution.extend({
     constructor(key, parent, many) {
-        let _class, _handler;
+        let _type, _handler;
         this.base(key, many);
         this.extend({
-            claim(handler, clazz) { 
+            /**
+             * Marks the handler as claiming the dependency.
+             * @method claim
+             * @param   {Function}  handler  -  dependency handler
+             * @param   {Function}  type     -  dependency type
+             * @returns {boolean} true if claimed, false otherwise.
+             */                            
+            claim(handler, type) { 
                 if (this.isResolvingDependency(handler)) {
                     return false;
                 }
                 _handler = handler;
-                _class   = clazz;
+                _type    = type;
                 return true;
             },
+            /**
+             * Gets the parent dependency
+             * @property {miruken.ioc.DependencyResolution} parent
+             */
+            get parent() { return parent; },            
+            /**
+             * Gets the component requesting the dependency.
+             * @property {Object} component
+             */
+            get type() { return _type; },
             /**
              * Determines if the handler is in the process of resolving a dependency.
              * @method isResolvingDependency
@@ -199,12 +216,12 @@ export const DependencyResolution = Resolution.extend({
              */                
             formattedDependencyChain() {
                 const invariant  = $eq.test(key),
-                    rawKey     = Modifier.unwrap(key),
-                    keyDisplay = invariant ? `\`${rawKey}\`` : rawKey,
-                    display    = _class ? `(${keyDisplay} <- ${_class})` : keyDisplay;
+                      rawKey     = Modifier.unwrap(key),
+                      keyDisplay = invariant ? `\`${rawKey}\`` : rawKey,
+                      display    = _type ? `(${keyDisplay} <- ${_type})` : keyDisplay;
                 return parent 
-                    ? `${display} <= ${parent.formattedDependencyChain()}`
-                    : display;
+                     ? `${display} <= ${parent.formattedDependencyChain()}`
+                     : display;
             }
         });
     }
@@ -223,7 +240,9 @@ export function DependencyResolutionError(dependency, message) {
      * Gets the error message.
      * @property {string} message
      */
-    this.message = message;
+    this.message = message ||
+        `Dependency ${dependency.formattedDependencyChain()} could not be resolved.`;
+
     /**
      * Gets the failing dependency resolution.
      * @property {miruken.ioc.DependencyResolution} dependency
