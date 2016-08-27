@@ -4,16 +4,15 @@ import {
 } from 'miruken-core';
 
 import { Context, ContextualHelper } from 'miruken-context';
-
 import { ComponentPolicy } from './policy';
 
 /**
  * Manages the creation and destruction of components.
  * @class Lifestyle
  * @extends Base
- * @uses miruken.ioc.ComponentPolicy
- * @uses miruken.DisposingMixin
- * @uses miruken.Disposing
+ * @uses ComponentPolicy
+ * @uses DisposingMixin
+ * @uses Disposing
  */
 export const Lifestyle = Abstract.extend(ComponentPolicy, Disposing, DisposingMixin, {
     /**
@@ -55,14 +54,14 @@ export const Lifestyle = Abstract.extend(ComponentPolicy, Disposing, DisposingMi
         return !disposing;
     },
     applyPolicy(componentModel) {
-        componentModel.lifestyle = new this.constructor;
+        componentModel.lifestyle = new this.constructor();
     }
 });
 
 /**
  * Creates untracked component instances.
  * @class TransientLifestyle
- * @extends miruken.ioc.Lifestyle
+ * @extends Lifestyle
  */
 export const TransientLifestyle = Lifestyle.extend({
     constructor() {},
@@ -76,7 +75,7 @@ export const TransientLifestyle = Lifestyle.extend({
  * @class SingletonLifestyle
  * @constructor
  * @param {Object} [instance]  -  existing component instance
- * @extends miruken.ioc.Lifestyle
+ * @extends Lifestyle
  */
 export const SingletonLifestyle = Lifestyle.extend({
     constructor(instance) {
@@ -107,10 +106,10 @@ export const SingletonLifestyle = Lifestyle.extend({
 });
 
 /**
- * Manages instances scoped to a {{#crossLink "miruken.context.Context"}}{{/crossLink}}.
+ * Manages instances scoped to a {{#crossLink "context.Context"}}{{/crossLink}}.
  * @class ContextualLifestyle
  * @constructor
- * @extends miruken.ioc.Lifestyle
+ * @extends Lifestyle
  */
 export const ContextualLifestyle = Lifestyle.extend({
     constructor() {

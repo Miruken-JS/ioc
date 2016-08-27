@@ -1,6 +1,6 @@
 import {
-    Base, Metadata, $isNothing, $isProtocol,
-    $isClass, $isFunction, $flatten
+    Base, $isNothing, $isProtocol,
+    $isClass, $isFunction, $flatten, $meta
 } from 'miruken-core';
 
 import { Registration } from './container';
@@ -8,10 +8,10 @@ import { $component } from './component';
 
 /**
  * Base class for installing one or more components into a 
- * {{#crossLink "miruken.ioc.Container"}}{{/crossLink}}.
+ * {{#crossLink "Container"}}{{/crossLink}}.
  * @class Installer
  * @extends Base
- * @uses miruken.ioc.Registration
+ * @uses Registration
  */        
 export const Installer = Base.extend(Registration, {
     register(container, composer) {}
@@ -22,7 +22,7 @@ export const Installer = Base.extend(Registration, {
  * @class FromBuilder
  * @constructor
  * @extends Base
- * @uses miruken.ioc.Registration
+ * @uses Registration
  */    
 export const FromBuilder = Base.extend(Registration, {
     constructor() {
@@ -37,7 +37,7 @@ export const FromBuilder = Base.extend(Registration, {
             /**
              * Gets the builder for filtering classes from this source.
              * @method basedOn
-             * @returns {miruken.ioc.BasedOnBuilder} fluent class filter.
+             * @returns {BasedOnBuilder} fluent class filter.
              */        
             basedOn(...constraints) {
                 _basedOn = new BasedOnBuilder(this, $flatten(constraints, true));
@@ -72,7 +72,7 @@ export const FromBuilder = Base.extend(Registration, {
  * @constructor
  * @param {Package} pkg         -  package containing components
  * @param {Array}   [...names]  -  optional member name filter
- * @extends miruken.ioc.FromBuilder
+ * @extends FromBuilder
  */        
 export const FromPackageBuilder = FromBuilder.extend({
     constructor(pkg, names) {
@@ -97,10 +97,10 @@ export const FromPackageBuilder = FromBuilder.extend({
  * Fluent builder for filtering a source of components.
  * @class BasedOnBuilder
  * @constructor
- * @param  {miruken.ioc.FromBuilder}  from            -  source of components
- * @param  {Array}                    ...constraints  -  initial constraints
+ * @param  {FromBuilder}  from            -  source of components
+ * @param  {Array}        ...constraints  -  initial constraints
  * @extends Base
- * @uses miruken.ioc.Registration
+ * @uses Registration
  */        
 export const BasedOnBuilder = Base.extend(Registration, {
     constructor(from, constraints) {
@@ -111,7 +111,7 @@ export const BasedOnBuilder = Base.extend(Registration, {
              * Adds a predicate for including a component.
              * @method if
              * @param   {Function}  condition  -  predicate to include component
-             * @returns {miruken.ioc.BasedOnBuilder} current builder.
+             * @returns {BasedOnBuilder} current builder.
              * @chainable
              */        
             if(condition) {
@@ -127,7 +127,7 @@ export const BasedOnBuilder = Base.extend(Registration, {
              * Adds a predicate for excluding a component.
              * @method unless
              * @param   {Function}  condition  -  predicate to exclude component
-             * @returns {miruken.ioc.BasedOnBuilder} current builder.
+             * @returns {BasedOnBuilder} current builder.
              * @chainable
              */                        
             unless(condition) {
@@ -143,8 +143,8 @@ export const BasedOnBuilder = Base.extend(Registration, {
              * Adds a custom component configuration.
              * @method configure
              * @param   {Function}  configuration  -  receives
-             * {{#crossLink "miruken.ioc.ComponentModel"}}{{/crossLink}} for configuration
-             * @returns {miruken.ioc.BasedOnBuilder} current builder.
+             * {{#crossLink "ComponentModel"}}{{/crossLink}} for configuration
+             * @returns {BasedOnBuilder} current builder.
              * @chainable
              */                                        
             configure(configuration) {
@@ -200,7 +200,7 @@ export const BasedOnBuilder = Base.extend(Registration, {
  * Fluent builder for identifying component key(s).
  * @class KeyBuilder
  * @constructor
- * @param  {miruken.ioc.BasedOnBuilder}  basedOn  -  based on builder
+ * @param  {BasedOnBuilder}  basedOn  -  based on builder
  * @extends Base
  */            
 export const KeyBuilder = Base.extend({
@@ -210,7 +210,7 @@ export const KeyBuilder = Base.extend({
             /**
              * Uses the component class as the key.
              * @method self
-             * @returns {miruken.ioc.BasedOnBuilder} based on builder.
+             * @returns {BasedOnBuilder} based on builder.
              */
             self() {
                 return selectKeys((keys, clazz) => keys.push(clazz));
@@ -218,37 +218,37 @@ export const KeyBuilder = Base.extend({
             /**
              * Uses the based on contraints as the keys.
              * @method basedOn
-             * @returns {miruken.ioc.BasedOnBuilder} based on builder.
+             * @returns {BasedOnBuilder} based on builder.
              */
             basedOn() {
                 return selectKeys((keys, clazz, constraints) => keys.push.apply(keys, constraints));
             },
             /**
-             * Uses any class {{#crossLink "miruken.Protocol"}}{{/crossLink}} as the key.
+             * Uses any class {{#crossLink "Protocol"}}{{/crossLink}} as the key.
              * @method anyService
-             * @returns {miruken.ioc.BasedOnBuilder} based on builder.
+             * @returns {BasedOnBuilder} based on builder.
              */
             anyService() {
                 return selectKeys((keys, clazz) => {
-                    const services = clazz[Metadata].allProtocols;
+                    const services = $meta(clazz).allProtocols;
                     if (services.length > 0) {
                         keys.push(services[0]);
                     }
                 });
             },
             /**
-             * Uses all class {{#crossLink "miruken.Protocol"}}{{/crossLink}} as the keys.
+             * Uses all class {{#crossLink "Protocol"}}{{/crossLink}} as the keys.
              * @method allServices
-             * @returns {miruken.ioc.BasedOnBuilder} based on builder.
+             * @returns {BasedOnBuilder} based on builder.
              */
             allServices() {
-                return selectKeys((keys, clazz) => keys.push(...clazz[Metadata].allProtocols));
+                return selectKeys((keys, clazz) => keys.push(...$meta(clazz).allProtocols));
             },
             /**
-             * Uses the most specific {{#crossLink "miruken.Protocol"}}{{/crossLink}} 
+             * Uses the most specific {{#crossLink "Protocol"}}{{/crossLink}} 
              * in the class hierarchy as the key.
              * @method mostSpecificService
-             * @returns {miruken.ioc.BasedOnBuilder} based on builder.
+             * @returns {BasedOnBuilder} based on builder.
              */
             mostSpecificService(service) {
                 return selectKeys((keys, clazz, constraints) => {
@@ -284,7 +284,7 @@ export const KeyBuilder = Base.extend({
              * If no name is provided, the default name will be used.
              * @method name
              * @param {string | Function}  [n]  -  name or function receiving default name
-             * @returns {miruken.ioc.BasedOnBuilder} based on builder.
+             * @returns {BasedOnBuilder} based on builder.
              */                
             name(n) {
                 return selectKeys((keys, clazz, constraints, name) => {
@@ -336,23 +336,21 @@ export const KeyBuilder = Base.extend({
 });
 
 /**
- * Shortcut for creating a {{#crossLink "miruken.ioc.FromBuilder"}}{{/crossLink}}.
+ * Shortcut for creating a {{#crossLink "FromBuilder"}}{{/crossLink}}.
  * @method $classes
  * @param  {Any}    from        -  any source of classes.  Only Package is currently supported.
  * @param  {Array}  [...names]  -  optional member name filter
- * @return {miruken.ioc.FromBuilder} from builder.
- * @for miruken.ioc.$
+ * @return {FromBuilder} from builder.
  */        
 export function $classes(from, names) {
     return new FromPackageBuilder(from, names);
 }
 
 /**
- * Creates a {{#crossLink "miruken.ioc.FromBuilder"}}{{/crossLink}} using a Package source.
+ * Creates a {{#crossLink "FromBuilder"}}{{/crossLink}} using a Package source.
  * @method $classes.fromPackage
  * @param  {Package}  pkg
  * @param  {Array}    [...names]  -  optional member name filter
- * @for miruken.ioc.$
  */    
 $classes.fromPackage = (pkg, names) => new FromPackageBuilder(pkg, names);
 
@@ -367,17 +365,17 @@ function _unregisterBatch(registrations) {
 function _addMatchingProtocols(clazz, preference, matches) {
     const toplevel = _toplevelProtocols(clazz);
     for (let protocol of toplevel) {
-        if (protocol[Metadata].allProtocols.indexOf(preference) >= 0) {
+        if ($meta(protocol).allProtocols.indexOf(preference) >= 0) {
             matches.push(protocol);
         }
     }
 }
 
 function _toplevelProtocols(type) {
-    const protocols = type[Metadata].allProtocols,
-          toplevel  = protocols.slice(0);
+    const protocols = $meta(type).allProtocols,
+          toplevel  = protocols.slice();
     for (let protocol of protocols) {
-        const parents = protocol[Metadata].allProtocols;
+        const parents = $meta(protocol).allProtocols;
         for (let parent of parents) {
             const index = toplevel.indexOf(parent);
             if (index >= 0) toplevel.splice(index, 1);

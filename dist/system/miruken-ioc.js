@@ -3,7 +3,7 @@
 System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken-validate'], function (_export, _context) {
     "use strict";
 
-    var Protocol, StrictProtocol, Invoking, Disposing, Flags, Base, ArrayManager, Modifier, $createModifier, $use, $lazy, $every, $eval, $child, $optional, $promise, $eq, Abstract, DisposingMixin, $isFunction, Facet, ProxyBuilder, $isSomething, $isProtocol, $isClass, $flatten, Metadata, $isNothing, $isPromise, $ancestorOf, $instant, Resolution, CallbackHandler, $provide, $composer, $NOT_HANDLED, Context, ContextualHelper, $validateThat, Validator, _typeof, ComponentPolicy, Registration, Container, $$composer, $container, DependencyModifier, DependencyModel, DependencyManager, DependencyResolution, Lifestyle, TransientLifestyle, SingletonLifestyle, ContextualLifestyle, $proxyBuilder, ComponentModel, NO_ARGS, ComponentBuilder, InterceptorBuilder, Installer, FromBuilder, FromPackageBuilder, BasedOnBuilder, KeyBuilder, InjectionPolicy, InitializationPolicy, DEFAULT_POLICIES, IoContainer;
+    var Protocol, StrictProtocol, Invoking, Disposing, Flags, Base, ArrayManager, Modifier, $createModifier, $use, $lazy, $every, $eval, $child, $optional, $promise, $eq, Abstract, DisposingMixin, $isFunction, Facet, ProxyBuilder, $isSomething, $isProtocol, $isClass, $flatten, $isNothing, $meta, $isPromise, $instant, Resolution, CallbackHandler, $provide, $composer, $NOT_HANDLED, Context, ContextualHelper, validateThat, Validator, _desc, _value, _obj, _typeof, ComponentPolicy, Registration, Container, $$composer, $container, DependencyModifier, DependencyModel, DependencyManager, DependencyResolution, Lifestyle, TransientLifestyle, SingletonLifestyle, ContextualLifestyle, proxyBuilder, ComponentModel, NO_ARGS, ComponentBuilder, InterceptorBuilder, Installer, FromBuilder, FromPackageBuilder, BasedOnBuilder, KeyBuilder, InjectionPolicy, InitializationPolicy, DEFAULT_POLICIES, IoContainer;
 
     function _toConsumableArray(arr) {
         if (Array.isArray(arr)) {
@@ -17,6 +17,35 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
         }
     }
 
+    function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) {
+        var desc = {};
+        Object['ke' + 'ys'](descriptor).forEach(function (key) {
+            desc[key] = descriptor[key];
+        });
+        desc.enumerable = !!desc.enumerable;
+        desc.configurable = !!desc.configurable;
+
+        if ('value' in desc || desc.initializer) {
+            desc.writable = true;
+        }
+
+        desc = decorators.slice().reverse().reduce(function (desc, decorator) {
+            return decorator(target, property, desc) || desc;
+        }, desc);
+
+        if (context && desc.initializer !== void 0) {
+            desc.value = desc.initializer ? desc.initializer.call(context) : void 0;
+            desc.initializer = undefined;
+        }
+
+        if (desc.initializer === void 0) {
+            Object['define' + 'Property'](target, property, desc);
+            desc = null;
+        }
+
+        return desc;
+    }
+
     function _makeClassFactory(clazz) {
         return function (burden) {
             return Reflect.construct(clazz, burden[Facet.Parameters] || NO_ARGS);
@@ -24,7 +53,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
     }
 
     function _makeProxyFactory(types) {
-        var proxy = $proxyBuilder.buildProxy(types);
+        var proxy = proxyBuilder.buildProxy(types);
         return function (burden) {
             return Reflect.construct(proxy, [burden]);
         };
@@ -69,7 +98,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
             for (var _iterator6 = toplevel[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
                 var protocol = _step6.value;
 
-                if (protocol[Metadata].allProtocols.indexOf(preference) >= 0) {
+                if ($meta(protocol).allProtocols.indexOf(preference) >= 0) {
                     matches.push(protocol);
                 }
             }
@@ -90,8 +119,8 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
     }
 
     function _toplevelProtocols(type) {
-        var protocols = type[Metadata].allProtocols,
-            toplevel = protocols.slice(0);
+        var protocols = $meta(type).allProtocols,
+            toplevel = protocols.slice();
         var _iteratorNormalCompletion7 = true;
         var _didIteratorError7 = false;
         var _iteratorError7 = undefined;
@@ -100,7 +129,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
             for (var _iterator7 = protocols[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
                 var protocol = _step7.value;
 
-                var parents = protocol[Metadata].allProtocols;
+                var parents = $meta(protocol).allProtocols;
                 var _iteratorNormalCompletion8 = true;
                 var _didIteratorError8 = false;
                 var _iteratorError8 = undefined;
@@ -200,7 +229,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
             if ($isNothing(group)) {
                 return 'continue';
             }
-            var resolved = group.slice(0);
+            var resolved = group.slice();
 
             var _loop3 = function _loop3(index) {
                 var dep = resolved[index];
@@ -343,10 +372,9 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
             $isProtocol = _mirukenCore.$isProtocol;
             $isClass = _mirukenCore.$isClass;
             $flatten = _mirukenCore.$flatten;
-            Metadata = _mirukenCore.Metadata;
             $isNothing = _mirukenCore.$isNothing;
+            $meta = _mirukenCore.$meta;
             $isPromise = _mirukenCore.$isPromise;
-            $ancestorOf = _mirukenCore.$ancestorOf;
             $instant = _mirukenCore.$instant;
         }, function (_mirukenCallback) {
             Resolution = _mirukenCallback.Resolution;
@@ -358,7 +386,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
             Context = _mirukenContext.Context;
             ContextualHelper = _mirukenContext.ContextualHelper;
         }, function (_mirukenValidate) {
-            $validateThat = _mirukenValidate.$validateThat;
+            validateThat = _mirukenValidate.validateThat;
             Validator = _mirukenValidate.Validator;
         }],
         execute: function () {
@@ -660,9 +688,9 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
 
             _export('ContextualLifestyle', ContextualLifestyle);
 
-            $proxyBuilder = new ProxyBuilder();
+            proxyBuilder = new ProxyBuilder();
 
-            _export('ComponentModel', ComponentModel = Base.extend($validateThat, {
+            _export('ComponentModel', ComponentModel = Base.extend((_obj = {
                 constructor: function constructor() {
                     var _key = void 0,
                         _implementation = void 0,
@@ -779,24 +807,21 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
                         }
                     });
                 },
-
-                $validateThat: {
-                    keyCanBeDetermined: function keyCanBeDetermined(validation) {
-                        if (!this.key) {
-                            validation.results.addKey("key").addError("required", {
-                                message: "Key could not be determined for component."
-                            });
-                        }
-                    },
-                    factoryCanBeDetermined: function factoryCanBeDetermined(validation) {
-                        if (!this.factory) {
-                            validation.results.addKey("factory").addError("required", {
-                                message: "Factory could not be determined for component."
-                            });
-                        }
+                keyCanBeDetermined: function keyCanBeDetermined(validation) {
+                    if (!this.key) {
+                        validation.results.addKey("key").addError("required", {
+                            message: "Key could not be determined for component."
+                        });
+                    }
+                },
+                factoryCanBeDetermined: function factoryCanBeDetermined(validation) {
+                    if (!this.factory) {
+                        validation.results.addKey("factory").addError("required", {
+                            message: "Factory could not be determined for component."
+                        });
                     }
                 }
-            }));
+            }, (_applyDecoratedDescriptor(_obj, 'keyCanBeDetermined', [validateThat], Object.getOwnPropertyDescriptor(_obj, 'keyCanBeDetermined'), _obj), _applyDecoratedDescriptor(_obj, 'factoryCanBeDetermined', [validateThat], Object.getOwnPropertyDescriptor(_obj, 'factoryCanBeDetermined'), _obj)), _obj)));
 
             _export('ComponentModel', ComponentModel);
 
@@ -1174,7 +1199,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
                         },
                         anyService: function anyService() {
                             return selectKeys(function (keys, clazz) {
-                                var services = clazz[Metadata].allProtocols;
+                                var services = $meta(clazz).allProtocols;
                                 if (services.length > 0) {
                                     keys.push(services[0]);
                                 }
@@ -1182,7 +1207,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
                         },
                         allServices: function allServices() {
                             return selectKeys(function (keys, clazz) {
-                                return keys.push.apply(keys, _toConsumableArray(clazz[Metadata].allProtocols));
+                                return keys.push.apply(keys, _toConsumableArray($meta(clazz).allProtocols));
                             });
                         },
                         mostSpecificService: function mostSpecificService(service) {
@@ -1314,10 +1339,10 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
                     if (componentModel.allDependenciesDefined()) {
                         return;
                     }
-                    var clazz = componentModel.implementation;
+                    var type = componentModel.implementation;
                     componentModel.manageDependencies(function (manager) {
-                        while (clazz && clazz !== Base) {
-                            var injects = [clazz.prototype.$inject, clazz.prototype.inject, clazz.$inject, clazz.inject];
+                        while (type && type !== Base && type !== Object) {
+                            var injects = [type.prototype.$inject, type.prototype.inject, type.$inject, type.inject];
                             var _iteratorNormalCompletion9 = true;
                             var _didIteratorError9 = false;
                             var _iteratorError9 = undefined;
@@ -1351,7 +1376,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
                                 }
                             }
 
-                            clazz = $ancestorOf(clazz);
+                            type = Object.getPrototypeOf(type);
                         }
                     });
                 }

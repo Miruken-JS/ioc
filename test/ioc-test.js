@@ -1,12 +1,11 @@
 import {
-    Base, Facet, Modifier, $inferProperties,
-    $isPromise, $using, $decorated, $promise,
-    $optional, $eq, $use, $lazy, $instant,
-    $eval, $child
+    Base, Facet, Modifier, $isPromise, $using,
+    $decorated, $promise, $optional, $eq, $use,
+    $lazy, $instant,$eval, $child
 } from 'miruken-core';
 
 import { $provide } from 'miruken-callback';
-import { Context, $contextual } from 'miruken-context';
+import { Context, contextual } from 'miruken-context';
 
 import {
     Validator, ValidationCallbackHandler
@@ -379,7 +378,7 @@ describe("TransientLifestyle", () => {
 });
 
 describe("ContextualLifestyle", () => {
-    const Controller = Base.extend($inferProperties, $contextual, {
+    const Controller = Base.extend(contextual, {
         $inject: [$optional(Context)],
         constructor(context) {
             this.context = context;
@@ -717,16 +716,16 @@ describe("IoContainer", () => {
                     $inject: [$promise(car.Engine), $promise($use(19))],
                     constructor(engine, count) {
                         this.extend({
-                            getEngine() { return engine; },
-                            getCount() { return count; }
+                            get engine() { return engine; },
+                            get count() { return count; }
                         });
                     }
                 });
             container.register($component(Order), $component(car.V12));
             Promise.resolve(container.resolve(Order)).then(order => {
-                expect($isPromise(order.getEngine())).to.be.true;
-                expect($isPromise(order.getCount())).to.be.true;
-                Promise.all([order.getEngine(), order.getCount()]).then(([engine, count]) => {
+                expect($isPromise(order.engine)).to.be.true;
+                expect($isPromise(order.count)).to.be.true;
+                Promise.all([order.engine, order.count]).then(([engine, count]) => {
                     expect(engine).to.be.instanceOf(car.V12);
                     expect(count).to.equal(19);
                     done();
@@ -759,7 +758,7 @@ describe("IoContainer", () => {
             Promise.resolve(container.resolve(car.Car)).then(c => {
                 const diagnostics = c.engine.diagnostics;
                 expect(diagnostics).to.be.instanceOf(car.OBDII);
-                expect(diagnostics.getMPG()).to.equal(22.0);
+                expect(diagnostics.mpg).to.equal(22.0);
                 done();
             });
         });
@@ -778,17 +777,17 @@ describe("IoContainer", () => {
                     $inject: [$lazy(car.Engine), $lazy($use(9))],
                     constructor(engine, count) {
                         this.extend({
-                            getEngine() { return engine(); },
-                            getCount() { return count; }
+                            get engine() { return engine(); },
+                            get count() { return count; }
                         });
                     }
                 });
             container.register($component(Order), $component(car.V12));
             Promise.resolve(container.resolve(Order)).then(order => {
-                Promise.all([order.getEngine(), order.getEngine()]).then(([engine1, engine2]) => {
+                Promise.all([order.engine, order.engine]).then(([engine1, engine2]) => {
                     expect(engine1).to.be.instanceOf(car.V12);
                     expect(engine1).to.equal(engine2);
-                    expect(order.getCount()).to.equal(9);
+                    expect(order.count).to.equal(9);
                     done();
                 });
             });
@@ -799,7 +798,7 @@ describe("IoContainer", () => {
                     $inject: [$lazy(car.Engine)],
                     constructor(engine) {
                         this.extend({
-                            getEngine() { return engine(); }
+                            get engine() { return engine(); }
                         });
                     }
                 });
@@ -816,14 +815,14 @@ describe("IoContainer", () => {
                     $inject: [$lazy(car.Car)],
                     constructor(c) {
                         this.extend({
-                            getCar() { return c(); }
+                            get car() { return c(); }
                         });
                     }
                 });
             container.register($component(Order), $component(car.Ferrari));
             Promise.resolve(container.resolve(Order)).then(order => {
                 expect(order).to.be.instanceOf(Order);
-                Promise.resolve(order.getCar()).catch(error => {
+                Promise.resolve(order.car).catch(error => {
                     expect(error).to.be.instanceof(DependencyResolutionError);
                     expect(error.dependency.key).to.eql(car.Engine);
                     expect(error.dependency.parent.key).to.eql(car.Car);
@@ -859,8 +858,8 @@ describe("IoContainer", () => {
                       $inject: [car.Engine, $eval(counter)],
                       constructor(engine, count) {
                           this.extend({
-                              getEngine() { return engine; },
-                              getCount() { return count; }
+                              get engine() { return engine; },
+                              get count() { return count; }
                          });
                       }
                   });
@@ -868,8 +867,8 @@ describe("IoContainer", () => {
                                            $component(car.V12))).then(reg => {
                 Promise.all([container.resolve(Order), container.resolve(Order)])
                     .then(([order1, order2]) => {
-                        expect(order1.getCount()).to.equal(1);
-                        expect(order2.getCount()).to.equal(2);
+                        expect(order1.count).to.equal(1);
+                        expect(order2.count).to.equal(2);
                         done();
                     });
             });
@@ -880,8 +879,8 @@ describe("IoContainer", () => {
                     $inject: [car.Engine, $eval(5)],
                     constructor(engine, count) {
                         this.extend({
-                            getEngine() { return engine; },
-                            getCount() { return count; }
+                            get engine() { return engine; },
+                            get count() { return count; }
                         });
                     }
                 });
@@ -889,8 +888,8 @@ describe("IoContainer", () => {
                                            $component(car.V12))).then(reg => {
                 Promise.all([container.resolve(Order), container.resolve(Order)])
                     .then(([order1, order2]) => {
-                        expect(order1.getCount()).to.equal(5);
-                        expect(order2.getCount()).to.equal(5);
+                        expect(order1.count).to.equal(5);
+                        expect(order2.count).to.equal(5);
                         done();
                     });
             });
@@ -901,13 +900,13 @@ describe("IoContainer", () => {
                     $inject: [Container],
                     constructor(container) {
                         this.extend({
-                            getContainer() { return container; },
+                            get container() { return container; },
                         });
                     }
                 });
             container.register($component(Registry));
             Promise.resolve(container.resolve(Registry)).then(registry => {
-                 expect(registry.getContainer()).to.be.instanceOf(Container);
+                 expect(registry.container).to.be.instanceOf(Container);
                  done();
             });
         });
@@ -917,14 +916,14 @@ describe("IoContainer", () => {
                     $inject: [$$composer],
                     constructor(composer) {
                         this.extend({
-                            getComposer() { return composer; },
+                            get composer() { return composer; },
                         });
                     }
                 });
             container.register($component(Registry));
             Promise.resolve(container.resolve(Registry)).then(registry => {
-                expect($decorated(registry.getComposer())).to.equal(context);
-                Promise.resolve(Validator(registry.getComposer()).validate(registry))
+                expect($decorated(registry.composer)).to.equal(context);
+                Promise.resolve(Validator(registry.composer).validate(registry))
                     .then(validation => {
                         expect(validation.valid).to.be.true;
                 });
@@ -998,7 +997,7 @@ describe("IoContainer", () => {
         });        
         
         it("should resolve in new context", done => {
-            const Workflow = Base.extend($contextual);
+            const Workflow = Base.extend(contextual);
             container.register($component(Workflow).newInContext());
             Promise.resolve(container.resolve(Workflow)).then(workflow => {
                 expect(workflow).to.be.instanceOf(Workflow);
@@ -1012,14 +1011,14 @@ describe("IoContainer", () => {
                 $inject: [car.Engine],
                 constructor(engine) {
                     this.extend({
-                        getEngine() { return engine; }
+                        get engine() { return engine; }
                     });
                 }    
             });
             container.register($component(car.V12), $component(AssemblyLine).newInChildContext());
             Promise.resolve(container.resolve(AssemblyLine)).then(assembleEngine => {
                 expect(assembleEngine).to.be.instanceOf(AssemblyLine);
-                expect(assembleEngine.getEngine()).to.be.instanceOf(car.V12);
+                expect(assembleEngine.engine).to.be.instanceOf(car.V12);
                 expect(assembleEngine.context.parent).to.equal(context);
                 done();
             });
@@ -1043,7 +1042,7 @@ describe("IoContainer", () => {
                     $inject: [car.Car],
                     constructor(c) {
                         this.extend({
-                            getCar() { return c; }
+                            get car() { return c; }
                         });
                     }
                 }),
@@ -1054,7 +1053,7 @@ describe("IoContainer", () => {
                           container.register($component(car.Ferrari), $component(car.OBDII),
                                              $component(car.CraigsJunk))]).then(() => {
                     Promise.resolve(container.resolve(Order)).then(order => {
-                        const c           = order.getCar(),
+                        const c           = order.car,
                               engine      = c.engine,
                               diagnostics = engine.diagnostics;
                         expect(c).to.be.instanceOf(car.Ferrari);

@@ -8,7 +8,7 @@ import {
     Context, ContextualHelper
 } from 'miruken-context';
 
-import { $validateThat } from 'miruken-validate';
+import { validateThat } from 'miruken-validate';
 
 import {
     Lifestyle, SingletonLifestyle,
@@ -23,18 +23,17 @@ import { Registration } from './container';
 
 /**
  * Shared proxy builder
- * @property {miruken.ProxyBuilder} proxyBuilder
- * @for miruken.ioc.$
+ * @property {ProxyBuilder} proxyBuilder
  */            
-const $proxyBuilder = new ProxyBuilder();
+const proxyBuilder = new ProxyBuilder();
 
 /**
- * Describes a component to be managed by a {{#crossLink "miruken.ioc.Container"}}{{/crossLink}}.
+ * Describes a component to be managed by a {{#crossLink "Container"}}{{/crossLink}}.
  * @class ComponentModel
  * @constructor
  * @extends Base
  */
-export const ComponentModel = Base.extend($validateThat, {
+export const ComponentModel = Base.extend({
     constructor() {
         let _key, _implementation, _lifestyle, _factory,
             _invariant = false, _burden = {};
@@ -70,7 +69,7 @@ export const ComponentModel = Base.extend($validateThat, {
             set invariant(value) { _invariant = !!value; },
             /**
              * Gets/sets the component lifestyle.
-             * @property {miruken.ioc.Lifestyle} lifestyle
+             * @property {Lifestyle} lifestyle
              */
             get lifestyle() { return _lifestyle; },
             set lifestyle(value) {
@@ -152,8 +151,8 @@ export const ComponentModel = Base.extend($validateThat, {
             /**
              * Manages the component dependency group.
              * @method manageDependencies
-             * @param  {string}   [key=Facet.Parameters]  -  dependency group  
-             * @param  {Function} actions  -  function accepting miruken.ioc.DependencyManager
+             * @param  {string}    [key=Facet.Parameters]  -  dependency group  
+             * @param  {Function}  actions                 -  function accepting DependencyManager
              * @return {Array} dependency group.
              */                                
             manageDependencies(key, actions) {
@@ -180,20 +179,20 @@ export const ComponentModel = Base.extend($validateThat, {
             get burden() { return _burden; }
         });
     },
-    $validateThat: {
-        keyCanBeDetermined(validation) {
-            if (!this.key) {
-                validation.results.addKey("key").addError("required", { 
-                    message: "Key could not be determined for component." 
-                });
-            }
-        },
-        factoryCanBeDetermined(validation) {
-            if (!this.factory) {
-                validation.results.addKey("factory").addError("required", { 
-                    message: "Factory could not be determined for component." 
-                });
-            }
+    @validateThat
+    keyCanBeDetermined(validation) {
+        if (!this.key) {
+            validation.results.addKey("key").addError("required", { 
+                message: "Key could not be determined for component." 
+            });
+        }
+    },
+    @validateThat
+    factoryCanBeDetermined(validation) {
+        if (!this.factory) {
+            validation.results.addKey("factory").addError("required", { 
+                message: "Factory could not be determined for component." 
+            });
         }
     }
 });
@@ -205,16 +204,16 @@ function _makeClassFactory(clazz) {
 }
 
 function _makeProxyFactory(types) {
-    const proxy = $proxyBuilder.buildProxy(types);
+    const proxy = proxyBuilder.buildProxy(types);
     return burden => Reflect.construct(proxy, [burden]);
 }
 
 /**
- * Builds {{#crossLink "miruken.ioc.ComponentModel"}}{{/crossLink}} using fluent api.
+ * Builds {{#crossLink "ComponentModel"}}{{/crossLink}} using fluent api.
  * @class ComponentBuilder
  * @constructor
  * @extends Base
- * @uses miruken.ioc.Registration
+ * @uses Registration
  */
 export const ComponentBuilder = Base.extend(Registration, {
     constructor(key) {
@@ -225,7 +224,7 @@ export const ComponentBuilder = Base.extend(Registration, {
             /**
              * Marks the component as invariant.
              * @method invariant
-             * @return {miruken.ioc.ComponentBuilder} builder
+             * @return {ComponentBuilder} builder
              * @chainable
              */
             invarian() {
@@ -236,7 +235,7 @@ export const ComponentBuilder = Base.extend(Registration, {
              * Specifies the component class.
              * @method boundTo
              * @param {Function} value  - component class
-             * @return {miruken.ioc.ComponentBuilder} builder
+             * @return {ComponentBuilder} builder
              * @chainable
              */                
             boundTo(clazz) {
@@ -247,7 +246,7 @@ export const ComponentBuilder = Base.extend(Registration, {
              * Specifies component dependencies.
              * @method dependsOn
              * @param  {Argument} arguments  -  dependencies
-             * @return {miruken.ioc.ComponentBuilder} builder
+             * @return {ComponentBuilder} builder
              * @chainable
              */                                
             dependsOn(...dependencies) {
@@ -259,7 +258,7 @@ export const ComponentBuilder = Base.extend(Registration, {
              * Specifies the component factory.
              * @method usingFactory
              * @param {Function} value  - component factory
-             * @return {miruken.ioc.ComponentBuilder} builder
+             * @return {ComponentBuilder} builder
              * @chainable
              */                                
             usingFactory(factory) {
@@ -270,7 +269,7 @@ export const ComponentBuilder = Base.extend(Registration, {
              * Uses the supplied component instance.
              * @method instance
              * @param {Object} instance  - component instance
-             * @return {miruken.ioc.ComponentBuilder} builder
+             * @return {ComponentBuilder} builder
              * @chainable
              */                                                
             instance(instance) {
@@ -278,9 +277,9 @@ export const ComponentBuilder = Base.extend(Registration, {
                 return this;
             },
             /**
-             * Chooses the {{#crossLink "miruken.ioc.SingletonLifestyle"}}{{/crossLink}}.
+             * Chooses the {{#crossLink "SingletonLifestyle"}}{{/crossLink}}.
              * @method singleon
-             * @return {miruken.ioc.ComponentBuilder} builder
+             * @return {ComponentBuilder} builder
              * @chainable
              */
             singleton() {
@@ -288,9 +287,9 @@ export const ComponentBuilder = Base.extend(Registration, {
                 return this;
             },
             /**
-             * Chooses the {{#crossLink "miruken.ioc.TransientLifestyle"}}{{/crossLink}}.
+             * Chooses the {{#crossLink "TransientLifestyle"}}{{/crossLink}}.
              * @method transient
-             * @return {miruken.ioc.ComponentBuilder} builder
+             * @return {ComponentBuilder} builder
              * @chainable
              */                
             transient() {
@@ -298,9 +297,9 @@ export const ComponentBuilder = Base.extend(Registration, {
                 return this;
             },
             /**
-             * Chooses the {{#crossLink "miruken.ioc.ContextualLifestyle"}}{{/crossLink}}.
+             * Chooses the {{#crossLink "ContextualLifestyle"}}{{/crossLink}}.
              * @method contextual
-             * @return {miruken.ioc.ComponentBuilder} builder
+             * @return {ComponentBuilder} builder
              * @chainable
              */                                
             contextual() {
@@ -309,9 +308,9 @@ export const ComponentBuilder = Base.extend(Registration, {
             },
             /**
              * Binds the component to the current 
-             * {{#crossLink "miruken.context.Context"}}{{/crossLink}}.
+             * {{#crossLink "Context"}}{{/crossLink}}.
              * @method newInContext
-             * @return {miruken.ioc.ComponentBuilder} builder
+             * @return {ComponentBuilder} builder
              * @chainable
              */                                                
             newInContext() {
@@ -320,9 +319,9 @@ export const ComponentBuilder = Base.extend(Registration, {
             },
             /**
              * Binds the component to a child of the current 
-             * {{#crossLink "miruken.context.Context"}}{{/crossLink}}.
+             * {{#crossLink "Context"}}{{/crossLink}}.
              * @method newInContext
-             * @return {miruken.ioc.ComponentBuilder} builder
+             * @return {ComponentBuilder} builder
              * @chainable
              */                                                                
             newInChildContext() {
@@ -332,8 +331,8 @@ export const ComponentBuilder = Base.extend(Registration, {
             /**
              * Attaches component interceptors.
              * @method interceptors
-             * @param  {miruken.Interceptor}  ...interceptors  -  interceptors
-             * @return {miruken.ioc.ComponentBuilder} builder
+             * @param  {Interceptor}  ...interceptors  -  interceptors
+             * @return {ComponentBuilder} builder
              * @chainable
              */                                                
             interceptors(...interceptors) {
@@ -341,9 +340,9 @@ export const ComponentBuilder = Base.extend(Registration, {
                 return new InterceptorBuilder(this, _componentModel, interceptors);
             },
             /**
-             * Attaches {{#crossLink "miruken.ioc.ComponentPolicy"}}{{/crossLink}}'s.
+             * Attaches {{#crossLink "ComponentPolicy"}}{{/crossLink}}'s.
              * @method policies
-             * @param   {miruken.ioc.ComponentPolicy}  ...policies  -  policies
+             * @param   {ComponentPolicy}  ...policies  -  policies
              */            
             policies(...policies) {
                 policies = $flatten(policies, true);
@@ -373,14 +372,14 @@ export const ComponentBuilder = Base.extend(Registration, {
 });
 
 /**
- * Builds {{#crossLink "miruken.ioc.ComponentModel"}}{{/crossLink}} interceptors using fluent api.
+ * Builds {{#crossLink "ComponentModel"}}{{/crossLink}} interceptors using fluent api.
  * @class InterceptorBuilder
  * @constructor
- * @param {miruken.ioc.ComponentBuilder}  component       -  component builder
- * @param {miruken.ioc.ComponentModel}    componentModel  -  component model
- * @param {Array}                         interceptors    -  component interceptors
+ * @param {ComponentBuilder}  component       -  component builder
+ * @param {ComponentModel}    componentModel  -  component model
+ * @param {Array}             interceptors    -  component interceptors
  * @extends Base
- * @uses miruken.ioc.Registration
+ * @uses Registration
  */
 export const InterceptorBuilder = Base.extend(Registration, {
     constructor(component, componentModel, interceptors) {
@@ -399,7 +398,7 @@ export const InterceptorBuilder = Base.extend(Registration, {
             /**
              * Marks interceptors to be added to the front of the list.
              * @method toFront
-             * @returns {miruken.ioc.InterceptorBuilder} builder
+             * @returns {InterceptorBuilder} builder
              * @chainable
              */            
             toFront() {
@@ -409,7 +408,7 @@ export const InterceptorBuilder = Base.extend(Registration, {
              * Marks interceptors to be added at the supplied index.
              * @method atIndex
              * @param {number}  index  -  index to add interceptors at
-             * @returns {miruken.ioc.InterceptorBuilder} builder
+             * @returns {InterceptorBuilder} builder
              * @chainable
              */            
             atIndex(index) {
@@ -427,23 +426,23 @@ export const InterceptorBuilder = Base.extend(Registration, {
 });
 
 /**
- * Shortcut for creating a {{#crossLink "miruken.ioc.ComponentBuilder"}}{{/crossLink}}.
+ * Shortcut for creating a {{#crossLink "ComponentBuilder"}}{{/crossLink}}.
  * @method $component
  * @param   {Any} key - component key
- * @return  {miruken.ioc.ComponentBuilder} component builder.
- * @for miruken.ioc.$
+ * @return  {ComponentBuilder} component builder.
+ * @for $
  */    
 export function $component(key) {
     return new ComponentBuilder(key);
 }
                                        
 /**
- * Identifies an invalid {{#crossLink "miruken.ioc.ComponentModel"}}{{/crossLink}}.
+ * Identifies an invalid {{#crossLink "ComponentModel"}}{{/crossLink}}.
  * @class ComponentModelError
  * @constructor
- * @param {miruken.ioc.ComponentModel}        componentModel     -  invalid component model
- * @param {miruken.validate.ValidationResult} validationResults  -  validation results
- * @param {string}                            message            -  error message
+ * @param  {ComponentModel}    componentModel     -  invalid component model
+ * @param  {ValidationResult}  validationResults  -  validation results
+ * @param  {string}            message            -  error message
  * @extends Error
  */
 export function ComponentModelError(componentModel, validationResults, message) {
@@ -454,12 +453,12 @@ export function ComponentModelError(componentModel, validationResults, message) 
     this.message = message || "The component model contains one or more errors";
     /**
      * Gets the invalid component model.
-     * @property {miruken.ioc.ComponentModel} componentModel
+     * @property {ComponentModel} componentModel
      */         
     this.componentModel = componentModel;
     /**
      * Gets the failing validation results.
-     * @property {miruken.validate.ValidationResult} validationResults
+     * @property {ValidationResult} validationResults
      */         
     this.validationResults = validationResults;
     

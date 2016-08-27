@@ -1,6 +1,6 @@
 import {
-    Base,$isNothing, $isFunction, $isPromise,
-    $ancestorOf, $eq, $instant, $flatten
+    Base,$isNothing, $isFunction,
+    $isPromise, $eq, $instant, $flatten
 } from 'miruken-core';
 
 import {
@@ -23,7 +23,7 @@ import {
 /**
  * Collects dependencies to be injected into components.
  * @class InjectionPolicy
- * @uses miruken.ioc.ComponentPolicy
+ * @uses ComponentPolicy
  * @extends Base
  */
 export const InjectionPolicy = Base.extend(ComponentPolicy, {
@@ -34,11 +34,13 @@ export const InjectionPolicy = Base.extend(ComponentPolicy, {
         if (componentModel.allDependenciesDefined()) {
             return;
         }
-        let clazz = componentModel.implementation;
+        let type = componentModel.implementation;
         componentModel.manageDependencies(manager => {
-            while (clazz && (clazz !== Base)) {
-                const injects = [clazz.prototype.$inject, clazz.prototype.inject,
-                                 clazz.$inject, clazz.inject];
+            while (type && (type !== Base) && (type !== Object)) {
+                const injects = [type.prototype.$inject,
+                                 type.prototype.inject,
+                                 type.$inject,
+                                 type.inject];
                 for (let inject of injects) {
                     if (inject !== undefined) {
                         if ($isFunction(inject)) {
@@ -50,16 +52,16 @@ export const InjectionPolicy = Base.extend(ComponentPolicy, {
                         }
                     }
                 }
-                clazz = $ancestorOf(clazz);
+                type = Object.getPrototypeOf(type);
             }
         });
     }
 });
 
 /**
- * Executes the {{#crossLink "miruken.Initializing"}}{{/crossLink}} protocol.
+ * Executes the {{#crossLink "Initializing"}}{{/crossLink}} protocol.
  * @class InitializationPolicy
- * @uses miruken.ioc.ComponentPolicy
+ * @uses ComponentPolicy
  * @extends Base
  */
 export const InitializationPolicy = Base.extend(ComponentPolicy, {
@@ -73,11 +75,11 @@ export const InitializationPolicy = Base.extend(ComponentPolicy, {
 const DEFAULT_POLICIES = [ new InjectionPolicy(), new InitializationPolicy() ];
 
 /**
- * Default Inversion of Control {{#crossLink "miruken.ioc.Container"}}{{/crossLink}}.
+ * Default Inversion of Control {{#crossLink "Container"}}{{/crossLink}}.
  * @class IoContainer
  * @constructor
  * @extends CallbackHandler
- * @uses miruken.ioc.Container
+ * @uses Container
  */
 export const IoContainer = CallbackHandler.extend(Container, {
     constructor() {
@@ -188,7 +190,7 @@ function _resolveBurden(burden, instant, resolution, composer) {
         if ($isNothing(group)) {
             continue;
         }
-        const resolved = group.slice(0);
+        const resolved = group.slice();
         for (let index = 0; index < resolved.length; ++index) {
             const dep = resolved[index];
             if (dep === undefined) {

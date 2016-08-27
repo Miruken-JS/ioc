@@ -3,16 +3,16 @@ import {
 } from 'miruken-core';
 
 /**
- * Protocol for registering components in a {{#crossLink "miruken.ioc.Container"}}{{/crossLink}}.
+ * Protocol for registering components in a {{#crossLink "Container"}}{{/crossLink}}.
  * @class Registration
- * @extends miruken.Protocol
+ * @extends Protocol
  */                
 export const Registration = Protocol.extend({
     /**
      * Encapsulates the regisration of components in a container.
      * @method register
-     * @param  {miruken.ioc.Container}            container  -  container
-     * @param  {miruken.callback.CallbackHandler} composer   -  composition handler
+     * @param  {Container}       container  -  container
+     * @param  {CallbackHandler} composer   -  composition handler
      * @return {Function} function to unregister components.
      */
     register(container, composer) {}
@@ -21,9 +21,9 @@ export const Registration = Protocol.extend({
 /**
  * Protocol for exposing container capabilities.
  * @class Container
- * @extends miruken.StrictProtocol
- * @uses miruken.Invoking
- * @uses miruken.Disposing
+ * @extends StrictProtocol
+ * @uses Invoking
+ * @uses Disposing
  */            
 export const Container = StrictProtocol.extend(Invoking, Disposing, {
     /**
@@ -36,8 +36,8 @@ export const Container = StrictProtocol.extend(Invoking, Disposing, {
     /**
      * Adds a configured component to the container.
      * @method addComponent
-     * @param   {miruken.ioc.ComponentModel} componentModel  -  component model
-     * @param   {Array}                      [...policies]   -  component policies
+     * @param   {ComponentModel} componentModel  -  component model
+     * @param   {Array}          [...policies]   -  component policies
      * @return  {Function} function to remove component.
      */
     addComponent(componentModel, policies) {},

@@ -9,24 +9,23 @@ import { Resolution } from 'miruken-callback';
 
 /**
  * Symbol for injecting composer dependency.<br/>
- * See {{#crossLink "miruken.callback.CallbackHandler"}}{{/crossLink}}
+ * See {{#crossLink "CallbackHandler"}}{{/crossLink}}
  * @property {Object} $$composer
- * @for miruken.ioc.$
  */    
 export const $$composer = Symbol();
 
 /**
  * Modifier to request container dependency.<br/>
- * See {{#crossLink "miruken.ioc.Container"}}{{/crossLink}}
+ * See {{#crossLink "Container"}}{{/crossLink}}
  * @class $container
- * @extend miruken.Modifier
+ * @extend Modifier
  */            
 export const $container = $createModifier();
 
 /**
  * DependencyModifier flags
  * @class DependencyModifier
- * @extends miruken.Enum
+ * @extends Enum
  */    
 export const DependencyModifier = Flags({
     /**
@@ -35,47 +34,47 @@ export const DependencyModifier = Flags({
      */
     None: 0,
     /**
-     * See {{#crossLink "miruken.Modifier/$use:attribute"}}{{/crossLink}}
+     * See {{#crossLink "Modifier/$use:attribute"}}{{/crossLink}}
      * @property {number} Use
      */
     Use: 1 << 0,
     /**
-     * See {{#crossLink "miruken.Modifier/$lazy:attribute"}}{{/crossLink}}
+     * See {{#crossLink "Modifier/$lazy:attribute"}}{{/crossLink}}
      * @property {number} Lazy
      */
     Lazy: 1 << 1,
     /**
-     * See {{#crossLink "miruken.Modifier/$every:attribute"}}{{/crossLink}}
+     * See {{#crossLink "Modifier/$every:attribute"}}{{/crossLink}}
      * @property {number} Every
      */
     Every: 1 << 2,
     /**
-     * See {{#crossLink "miruken.Modifier/$eval:attribute"}}{{/crossLink}}
+     * See {{#crossLink "Modifier/$eval:attribute"}}{{/crossLink}}
      * @property {number} Dynamic
      */
     Dynamic: 1 << 3,
     /**
-     * See {{#crossLink "miruken.Modifier/$optional:attribute"}}{{/crossLink}}
+     * See {{#crossLink "Modifier/$optional:attribute"}}{{/crossLink}}
      * @property {number} Optional
      */
     Optional: 1 << 4,
     /**
-     * See {{#crossLink "miruken.Modifier/$promise:attribute"}}{{/crossLink}}
+     * See {{#crossLink "Modifier/$promise:attribute"}}{{/crossLink}}
      * @property {number} Promise
      */
     Promise: 1 << 5,
     /**
-     * See {{#crossLink "miruken.Modifier/$eq:attribute"}}{{/crossLink}}
+     * See {{#crossLink "Modifier/$eq:attribute"}}{{/crossLink}}
      * @property {number} Invariant
      */
     Invariant: 1 << 6,
     /**
-     * See {{#crossLink "miruken.ioc.$container"}}{{/crossLink}}
+     * See {{#crossLink "$container"}}{{/crossLink}}
      * @property {number} Container
      */
     Container: 1 << 7,
     /**
-     * See {{#crossLink "miruken.Modifier/$child:attribute"}}{{/crossLink}}
+     * See {{#crossLink "Modifier/$child:attribute"}}{{/crossLink}}
      * @property {number} Child
      */        
     Child: 1 << 8
@@ -95,8 +94,8 @@ DependencyModifier.Invariant.modifier = $eq;
  * Describes a component dependency.
  * @class DependencyModel
  * @constructor
- * @param {Any} dependency  -  annotated dependency
- * @param {miruken.ioc.DependencyModifier} modifiers  -  dependency annotations
+ * @param {Any}                dependency  -  annotated dependency
+ * @param {DependencyModifier} modifiers   -  dependency annotations
  * @extends Base
  */
 export const DependencyModel = Base.extend({
@@ -120,7 +119,7 @@ export const DependencyModel = Base.extend({
             get dependency() { return dependency; },
             /**
              * Gets the dependency flags.
-             * @property {miruken.ioc.DependencyModifier} modifiers
+             * @property {DependencyModifier} modifiers
              * @readOnly
              */                        
             get modifiers() { return modifiers; }
@@ -129,7 +128,7 @@ export const DependencyModel = Base.extend({
     /**
      * Tests if the receiving dependency is annotated with the modifier.
      * @method test
-     * @param   {miruken.ioc.DependencyModifier}  modifier  -  modifier flags
+     * @param   {DependencyModifier}  modifier  -  modifier flags
      * @returns {boolean} true if the dependency is annotated with modifier(s).
      */        
     test(modifier) {
@@ -146,7 +145,7 @@ export const DependencyModel = Base.extend({
  * @class DependencyManager
  * @constructor
  * @param {Array} dependencies  -  dependencies
- * @extends miruken.ArrayManager
+ * @extends ArrayManager
  */
 export const DependencyManager = ArrayManager.extend({
     constructor(dependencies) {
@@ -160,14 +159,14 @@ export const DependencyManager = ArrayManager.extend({
 });
 
 /**
- * Specialized {{#crossLink "miruken.callback.Resolution"}}{{/crossLink}}
+ * Specialized {{#crossLink "Resolution"}}{{/crossLink}}
  * that maintains a parent relationship for representing resolution chains.
  * @class DependencyResolution
  * @constructor
- * @param   {string}                             key     -  resolution key
- * @param   {miruken.ioc.DependencyResolution}   parent  -  parent resolution
- * @param   {boolean}                            many    -  resolution cardinality
- * @extends miruken.callback.Resolution
+ * @param   {string}                 key     -  resolution key
+ * @param   {DependencyResolution}   parent  -  parent resolution
+ * @param   {boolean}                many    -  resolution cardinality
+ * @extends Resolution
  */
 export const DependencyResolution = Resolution.extend({
     constructor(key, parent, many) {
@@ -191,7 +190,7 @@ export const DependencyResolution = Resolution.extend({
             },
             /**
              * Gets the parent dependency
-             * @property {miruken.ioc.DependencyResolution} parent
+             * @property {DependencyResolution} parent
              */
             get parent() { return parent; },            
             /**
@@ -231,8 +230,8 @@ export const DependencyResolution = Resolution.extend({
  * Records a dependency resolution failure.
  * @class DependencyResolutionError
  * @constructor
- * @param {miruken.ioc.DependencyResolution} dependency  -  failing dependency
- * @param {string}                           message     -  error message
+ * @param {DependencyResolution} dependency  -  failing dependency
+ * @param {string}               message     -  error message
  * @extends Error
  */
 export function DependencyResolutionError(dependency, message) {
@@ -245,7 +244,7 @@ export function DependencyResolutionError(dependency, message) {
 
     /**
      * Gets the failing dependency resolution.
-     * @property {miruken.ioc.DependencyResolution} dependency
+     * @property {DependencyResolution} dependency
      */
     this.dependency = dependency;
     if (Error.captureStackTrace) {

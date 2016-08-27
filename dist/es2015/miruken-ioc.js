@@ -5,6 +5,8 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.IoContainer = exports.InitializationPolicy = exports.InjectionPolicy = exports.KeyBuilder = exports.BasedOnBuilder = exports.FromPackageBuilder = exports.FromBuilder = exports.Installer = exports.InterceptorBuilder = exports.ComponentBuilder = exports.ComponentModel = exports.ContextualLifestyle = exports.SingletonLifestyle = exports.TransientLifestyle = exports.Lifestyle = exports.DependencyResolution = exports.DependencyManager = exports.DependencyModel = exports.DependencyModifier = exports.$container = exports.$$composer = exports.Container = exports.Registration = exports.ComponentPolicy = undefined;
 
+var _desc, _value, _obj;
+
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
 
 exports.DependencyResolutionError = DependencyResolutionError;
@@ -21,6 +23,35 @@ var _mirukenContext = require('miruken-context');
 var _mirukenValidate = require('miruken-validate');
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
+function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) {
+    var desc = {};
+    Object['ke' + 'ys'](descriptor).forEach(function (key) {
+        desc[key] = descriptor[key];
+    });
+    desc.enumerable = !!desc.enumerable;
+    desc.configurable = !!desc.configurable;
+
+    if ('value' in desc || desc.initializer) {
+        desc.writable = true;
+    }
+
+    desc = decorators.slice().reverse().reduce(function (desc, decorator) {
+        return decorator(target, property, desc) || desc;
+    }, desc);
+
+    if (context && desc.initializer !== void 0) {
+        desc.value = desc.initializer ? desc.initializer.call(context) : void 0;
+        desc.initializer = undefined;
+    }
+
+    if (desc.initializer === void 0) {
+        Object['define' + 'Property'](target, property, desc);
+        desc = null;
+    }
+
+    return desc;
+}
 
 var ComponentPolicy = exports.ComponentPolicy = _mirukenCore.Protocol.extend({
     applyPolicy: function applyPolicy(componentModel, policies) {},
@@ -285,9 +316,9 @@ var ContextualLifestyle = exports.ContextualLifestyle = Lifestyle.extend({
     }
 });
 
-var $proxyBuilder = new _mirukenCore.ProxyBuilder();
+var proxyBuilder = new _mirukenCore.ProxyBuilder();
 
-var ComponentModel = exports.ComponentModel = _mirukenCore.Base.extend(_mirukenValidate.$validateThat, {
+var ComponentModel = exports.ComponentModel = _mirukenCore.Base.extend((_obj = {
     constructor: function constructor() {
         var _key = void 0,
             _implementation = void 0,
@@ -404,24 +435,21 @@ var ComponentModel = exports.ComponentModel = _mirukenCore.Base.extend(_mirukenV
             }
         });
     },
-
-    $validateThat: {
-        keyCanBeDetermined: function keyCanBeDetermined(validation) {
-            if (!this.key) {
-                validation.results.addKey("key").addError("required", {
-                    message: "Key could not be determined for component."
-                });
-            }
-        },
-        factoryCanBeDetermined: function factoryCanBeDetermined(validation) {
-            if (!this.factory) {
-                validation.results.addKey("factory").addError("required", {
-                    message: "Factory could not be determined for component."
-                });
-            }
+    keyCanBeDetermined: function keyCanBeDetermined(validation) {
+        if (!this.key) {
+            validation.results.addKey("key").addError("required", {
+                message: "Key could not be determined for component."
+            });
+        }
+    },
+    factoryCanBeDetermined: function factoryCanBeDetermined(validation) {
+        if (!this.factory) {
+            validation.results.addKey("factory").addError("required", {
+                message: "Factory could not be determined for component."
+            });
         }
     }
-});
+}, (_applyDecoratedDescriptor(_obj, 'keyCanBeDetermined', [_mirukenValidate.validateThat], Object.getOwnPropertyDescriptor(_obj, 'keyCanBeDetermined'), _obj), _applyDecoratedDescriptor(_obj, 'factoryCanBeDetermined', [_mirukenValidate.validateThat], Object.getOwnPropertyDescriptor(_obj, 'factoryCanBeDetermined'), _obj)), _obj));
 
 var NO_ARGS = Object.freeze([]);
 
@@ -432,7 +460,7 @@ function _makeClassFactory(clazz) {
 }
 
 function _makeProxyFactory(types) {
-    var proxy = $proxyBuilder.buildProxy(types);
+    var proxy = proxyBuilder.buildProxy(types);
     return function (burden) {
         return Reflect.construct(proxy, [burden]);
     };
@@ -793,7 +821,7 @@ var KeyBuilder = exports.KeyBuilder = _mirukenCore.Base.extend({
             },
             anyService: function anyService() {
                 return selectKeys(function (keys, clazz) {
-                    var services = clazz[_mirukenCore.Metadata].allProtocols;
+                    var services = (0, _mirukenCore.$meta)(clazz).allProtocols;
                     if (services.length > 0) {
                         keys.push(services[0]);
                     }
@@ -801,7 +829,7 @@ var KeyBuilder = exports.KeyBuilder = _mirukenCore.Base.extend({
             },
             allServices: function allServices() {
                 return selectKeys(function (keys, clazz) {
-                    return keys.push.apply(keys, _toConsumableArray(clazz[_mirukenCore.Metadata].allProtocols));
+                    return keys.push.apply(keys, _toConsumableArray((0, _mirukenCore.$meta)(clazz).allProtocols));
                 });
             },
             mostSpecificService: function mostSpecificService(service) {
@@ -964,7 +992,7 @@ function _addMatchingProtocols(clazz, preference, matches) {
         for (var _iterator6 = toplevel[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
             var protocol = _step6.value;
 
-            if (protocol[_mirukenCore.Metadata].allProtocols.indexOf(preference) >= 0) {
+            if ((0, _mirukenCore.$meta)(protocol).allProtocols.indexOf(preference) >= 0) {
                 matches.push(protocol);
             }
         }
@@ -985,8 +1013,8 @@ function _addMatchingProtocols(clazz, preference, matches) {
 }
 
 function _toplevelProtocols(type) {
-    var protocols = type[_mirukenCore.Metadata].allProtocols,
-        toplevel = protocols.slice(0);
+    var protocols = (0, _mirukenCore.$meta)(type).allProtocols,
+        toplevel = protocols.slice();
     var _iteratorNormalCompletion7 = true;
     var _didIteratorError7 = false;
     var _iteratorError7 = undefined;
@@ -995,7 +1023,7 @@ function _toplevelProtocols(type) {
         for (var _iterator7 = protocols[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
             var protocol = _step7.value;
 
-            var parents = protocol[_mirukenCore.Metadata].allProtocols;
+            var parents = (0, _mirukenCore.$meta)(protocol).allProtocols;
             var _iteratorNormalCompletion8 = true;
             var _didIteratorError8 = false;
             var _iteratorError8 = undefined;
@@ -1045,10 +1073,10 @@ var InjectionPolicy = exports.InjectionPolicy = _mirukenCore.Base.extend(Compone
         if (componentModel.allDependenciesDefined()) {
             return;
         }
-        var clazz = componentModel.implementation;
+        var type = componentModel.implementation;
         componentModel.manageDependencies(function (manager) {
-            while (clazz && clazz !== _mirukenCore.Base) {
-                var injects = [clazz.prototype.$inject, clazz.prototype.inject, clazz.$inject, clazz.inject];
+            while (type && type !== _mirukenCore.Base && type !== Object) {
+                var injects = [type.prototype.$inject, type.prototype.inject, type.$inject, type.inject];
                 var _iteratorNormalCompletion9 = true;
                 var _didIteratorError9 = false;
                 var _iteratorError9 = undefined;
@@ -1082,7 +1110,7 @@ var InjectionPolicy = exports.InjectionPolicy = _mirukenCore.Base.extend(Compone
                     }
                 }
 
-                clazz = (0, _mirukenCore.$ancestorOf)(clazz);
+                type = Object.getPrototypeOf(type);
             }
         });
     }
@@ -1251,7 +1279,7 @@ function _resolveBurden(burden, instant, resolution, composer) {
         if ((0, _mirukenCore.$isNothing)(group)) {
             return 'continue';
         }
-        var resolved = group.slice(0);
+        var resolved = group.slice();
 
         var _loop3 = function _loop3(index) {
             var dep = resolved[index];

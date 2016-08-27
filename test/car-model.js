@@ -1,44 +1,39 @@
 import {
     Base, Protocol, Resolving, Disposing,
-    Interceptor, $isString, $inferProperties,
-    $optional, $every
+    Interceptor, $isString, $optional, $every
 } from 'miruken-core';
 
-export const Engine = Resolving.extend(
-    $inferProperties, {
-        getNumberOfCylinders() {},
-        getHorsepower() {},
-        getDisplacement() {},
-        getRpm() {},
-        rev(rpm) {}
-    });
+export const Engine = Resolving.extend({
+    get numberOfCylinders() {},
+    get horsepower() {},
+    get displacement() {},
+    get rpm() {},
+    rev(rpm) {}
+});
 
-export const Car = Protocol.extend(
-    $inferProperties, {
-        getMake() {},
-        getModel() {},
-        getEngine () {}
-    });
+export const Car = Protocol.extend({
+    get make() {},
+    get model() {},
+    get engine () {}
+});
 
-export const Diagnostics = Protocol.extend(
-    $inferProperties, {
-        getMPG() {}
-    });
+export const Diagnostics = Protocol.extend({
+    get mpg() {}
+});
 
-export const Junkyard = Protocol.extend(
-    $inferProperties, {
-        decomission(part) {}
-    });
+export const Junkyard = Protocol.extend({
+    decomission(part) {}
+});
 
-export const V12 = Base.extend(Engine, $inferProperties, {
+export const V12 = Base.extend(Engine, {
     $inject: [,,$optional(Diagnostics)],
     constructor(horsepower, displacement, diagnostics) {
         let _rpm;
         this.extend({
-            getHorsepower() { return horsepower; },
-            getDisplacement() { return displacement; },
-            getDiagnostics() { return diagnostics; },
-            getRpm() { return _rpm; },
+            get horsepower() { return horsepower; },
+            get displacement() { return displacement; },
+            get diagnostics() { return diagnostics; },
+            get rpm() { return _rpm; },
             rev(rpm) {
                 if (rpm <= 8000) {
                     _rpm = rpm;
@@ -51,10 +46,10 @@ export const V12 = Base.extend(Engine, $inferProperties, {
     initialize() {
         Object.defineProperty(this, "calibrated", { value: true });
     },
-    getNumberOfCylinders() { return 12; }
+    get numberOfCylinders() { return 12; }
 });
 
-export const RebuiltV12 = V12.extend(Engine, Disposing, $inferProperties, {
+export const RebuiltV12 = V12.extend(Engine, Disposing, {
     $inject: [,,,Junkyard],
     constructor: function (horsepower, displacement, diagnostics, junkyard) {
         this.base(horsepower, displacement, diagnostics, junkyard);
@@ -66,43 +61,43 @@ export const RebuiltV12 = V12.extend(Engine, Disposing, $inferProperties, {
     }
 });
 
-export const Supercharger = Base.extend(Engine, $inferProperties, {
+export const Supercharger = Base.extend(Engine, {
     $inject: [Engine],
     constructor(engine, boost) {
         this.extend({
-            getHorsepower() {
-                return engine.getHorsepower() * (1.0 + boost); 
+            get horsepower() {
+                return engine.horsepower * (1.0 + boost); 
             },
-            getDisplacement() {
-                return engine.getDisplacement(); 
+            get displacement() {
+                return engine.displacement; 
             }
         });
     }
 });
 
-export const Ferrari = Base.extend(Car, $inferProperties, {
+export const Ferrari = Base.extend(Car, {
     $inject: [,Engine],
     constructor(model, engine) {
         this.extend({
-            getMake() { return "Ferrari"; },
-            getModel() { return model; },
-            getEngine() { return engine; }
+            get make() { return "Ferrari"; },
+            get model() { return model; },
+            get engine() { return engine; }
         });
     }
 });
 
-export const Bugatti = Base.extend(Car, $inferProperties, {
+export const Bugatti = Base.extend(Car, {
     $inject: [,Engine],
     constructor(model, engine) {
         this.extend({
-            getMake() { return "Bugatti"; },
-            getModel() { return model; },
-            getEngine() { return engine; }
+            get make() { return "Bugatti"; },
+            get model() { return model; },
+            get engine() { return engine; }
         });
     }
 });
 
-export const Auction = Base.extend($inferProperties, {
+export const Auction = Base.extend({
     $inject: [$every(Car)],
     constructor(cars) {
         let inventory = {};
@@ -115,34 +110,36 @@ export const Auction = Base.extend($inferProperties, {
             models.push(car);
         });
         this.extend({
-            getCars() { return inventory; }
+            get cars() { return inventory; }
         });
     }
 });
 
-export const OBDII = Base.extend(Diagnostics, $inferProperties, {
+export const OBDII = Base.extend(Diagnostics, {
     constructor() {
         this.extend({
-            getMPG() { return 22.0; }
+            get mpg() { return 22.0; }
         });
     }
 });
 
-export const CraigsJunk = Base.extend(Junkyard, $inferProperties, {
+export const CraigsJunk = Base.extend(Junkyard, {
     constructor() {
         let _parts = [];
         this.extend({
-            getParts() { return _parts.slice(0); },
+            get parts() { return _parts.slice(0); },
             decomission(part) { _parts.push(part); }
         });
     }
 });
 
 export const LogInterceptor = Interceptor.extend({
-    intercept(invocation) {
-        console.log(`Called ${invocation.method} with (${invocation.args.join(", ")}) from ${invocation.source.name}`);
+    intercept (invocation) {
+        console.log(
+            `${invocation.methodType.name} ${invocation.method} (${invocation.args.join(", ")})`
+        );
         const result = invocation.proceed();
-        console.log(`    And returned ${result}`);
+        console.log(`     Return ${result}`);
         return result;
     }
 });

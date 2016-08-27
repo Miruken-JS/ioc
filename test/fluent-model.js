@@ -6,8 +6,8 @@ export const Controller = Base.extend();
 export const Credentials = Base.extend({
     constructor(user, password) {
         this.extend({
-            getUser() { return user; },
-            getPassword() { return password; }
+            get user() { return user; },
+            get password() { return password; }
         });
     }
 });
