@@ -1,7 +1,7 @@
 import {
-    Base, Facet, Modifier, $isPromise, $using,
-    $decorated, $promise, $optional, $eq, $use,
-    $lazy, $instant,$eval, $child
+    Base, Facet, Modifier, inject, $isPromise,
+    $using, $decorated, $promise, $optional,
+    $eq, $use, $lazy, $instant,$eval, $child
 } from 'miruken-core';
 
 import { $provide } from 'miruken-callback';
@@ -335,6 +335,9 @@ describe("SingletonLifestyle", () => {
             context.addHandlers(new IoContainer(), new ValidationCallbackHandler());
             const unregister = container.register(
                 $component(car.RebuiltV12).singleton(), $component(car.CraigsJunk))[0];
+            inject.get(car.RebuiltV12, (d, k) => {
+                console.log(k);
+            });
             Promise.all([container.resolve(car.Engine), container.resolve(car.Junkyard)])
                 .then(([engine, junk]) => {
                     unregister();
@@ -379,7 +382,7 @@ describe("TransientLifestyle", () => {
 
 describe("ContextualLifestyle", () => {
     const Controller = Base.extend(contextual, {
-        $inject: [$optional(Context)],
+        @inject($optional(Context))
         constructor(context) {
             this.context = context;
         },
@@ -713,7 +716,7 @@ describe("IoContainer", () => {
 
         it("should resolve instance with dependency promises", done => {
             const Order = Base.extend({
-                    $inject: [$promise(car.Engine), $promise($use(19))],
+                    @inject($promise(car.Engine), $promise($use(19)))
                     constructor(engine, count) {
                         this.extend({
                             get engine() { return engine; },
@@ -774,7 +777,7 @@ describe("IoContainer", () => {
 
         it("should resolve instance with lazy dependencies", done => {
             const Order = Base.extend({
-                    $inject: [$lazy(car.Engine), $lazy($use(9))],
+                    @inject($lazy(car.Engine), $lazy($use(9)))
                     constructor(engine, count) {
                         this.extend({
                             get engine() { return engine(); },
@@ -795,7 +798,7 @@ describe("IoContainer", () => {
 
         it("should not fail resolve when missing lazy dependencies", done => {
             const Order = Base.extend({
-                    $inject: [$lazy(car.Engine)],
+                    @inject($lazy(car.Engine))
                     constructor(engine) {
                         this.extend({
                             get engine() { return engine(); }
@@ -812,7 +815,7 @@ describe("IoContainer", () => {
 
         it("should delay rejecting lazy dependency failures", done => {
             const Order = Base.extend({
-                    $inject: [$lazy(car.Car)],
+                    @inject($lazy(car.Car))
                     constructor(c) {
                         this.extend({
                             get car() { return c(); }
@@ -855,7 +858,7 @@ describe("IoContainer", () => {
             let   count   = 0;
             const counter = function () { return ++count; },
                   Order = Base.extend({
-                      $inject: [car.Engine, $eval(counter)],
+                      @inject(car.Engine, $eval(counter))
                       constructor(engine, count) {
                           this.extend({
                               get engine() { return engine; },
@@ -876,7 +879,7 @@ describe("IoContainer", () => {
 
         it("should behave like $use if no function passed to $eval", done => {
             const  Order = Base.extend({
-                    $inject: [car.Engine, $eval(5)],
+                    @inject(car.Engine, $eval(5))
                     constructor(engine, count) {
                         this.extend({
                             get engine() { return engine; },
@@ -897,7 +900,7 @@ describe("IoContainer", () => {
 
         it("should implicitly satisfy container dependency", done => {
             const Registry = Base.extend({
-                    $inject: [Container],
+                    @inject(Container)
                     constructor(container) {
                         this.extend({
                             get container() { return container; },
@@ -913,7 +916,7 @@ describe("IoContainer", () => {
 
         it("should implicitly satisfy composer dependency", done => {
             const Registry = Base.extend({
-                    $inject: [$$composer],
+                    @inject($$composer)
                     constructor(composer) {
                         this.extend({
                             get composer() { return composer; },
@@ -1008,7 +1011,7 @@ describe("IoContainer", () => {
 
         it("should resolve in new child context", done => {
             const AssemblyLine = Base.extend({
-                $inject: [car.Engine],
+                @inject(car.Engine)
                 constructor(engine) {
                     this.extend({
                         get engine() { return engine; }
@@ -1039,7 +1042,7 @@ describe("IoContainer", () => {
 
         it("should use child contexts to manage child containers", done => {
             const Order = Base.extend({
-                    $inject: [car.Car],
+                    @inject(car.Car)
                     constructor(c) {
                         this.extend({
                             get car() { return c; }

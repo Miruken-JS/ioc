@@ -1,4 +1,4 @@
-import {Protocol,StrictProtocol,Invoking,Disposing,Flags,Base,ArrayManager,Modifier,$createModifier,$use,$lazy,$every,$eval,$child,$optional,$promise,$eq,Abstract,DisposingMixin,$isFunction,Facet,ProxyBuilder,$isSomething,$isProtocol,$isClass,$flatten,$isNothing,$meta,$isPromise,$instant} from 'miruken-core';
+import {Protocol,StrictProtocol,Invoking,Disposing,Flags,Base,ArrayManager,Modifier,$createModifier,$use,$lazy,$every,$eval,$child,$optional,$promise,$eq,Abstract,DisposingMixin,$isFunction,Facet,ProxyBuilder,$isSomething,$isProtocol,$isClass,$flatten,$isNothing,$meta,inject,$isPromise,$instant} from 'miruken-core';
 import {Resolution,CallbackHandler,$provide,$composer,$NOT_HANDLED} from 'miruken-callback';
 import {Context,ContextualHelper} from 'miruken-context';
 import {validateThat,Validator} from 'miruken-validate';
@@ -502,21 +502,21 @@ const proxyBuilder = new ProxyBuilder();
  */
 export const ComponentModel = Base.extend({
     constructor() {
-        let _key, _implementation, _lifestyle, _factory,
+        let _key, _impl, _lifestyle, _factory,
             _invariant = false, _burden = {};
         this.extend({
             /**
              * Gets/sets the component key.
              * @property {Any} key
              */
-            get key() { return _key || _implementation },
+            get key() { return _key || _impl },
             set key(value) { _key = value; },
             /**
              * Gets/sets the component class.
              * @property {Functon} implementation
              */
             get implementation() {
-                let impl = _implementation;
+                let impl = _impl;
                 if (!impl && $isClass(_key)) {
                     impl = _key;
                 }
@@ -526,7 +526,7 @@ export const ComponentModel = Base.extend({
                 if ($isSomething(value) && !$isClass(value)) {
                     throw new TypeError(`${value} is not a class.`);
                 }
-                _implementation = value;
+                _impl = value;
             },
             /**
              * Gets/sets if component is invariant.
@@ -1162,7 +1162,7 @@ export const KeyBuilder = Base.extend({
              */
             anyService() {
                 return selectKeys((keys, clazz) => {
-                    const services = $meta(clazz).allProtocols;
+                    const services = $meta(clazz).protocols;
                     if (services.length > 0) {
                         keys.push(services[0]);
                     }
@@ -1174,7 +1174,7 @@ export const KeyBuilder = Base.extend({
              * @returns {BasedOnBuilder} based on builder.
              */
             allServices() {
-                return selectKeys((keys, clazz) => keys.push(...$meta(clazz).allProtocols));
+                return selectKeys((keys, clazz) => keys.push(...$meta(clazz).protocols));
             },
             /**
              * Uses the most specific {{#crossLink "Protocol"}}{{/crossLink}} 
@@ -1297,17 +1297,17 @@ function _unregisterBatch(registrations) {
 function _addMatchingProtocols(clazz, preference, matches) {
     const toplevel = _toplevelProtocols(clazz);
     for (let protocol of toplevel) {
-        if ($meta(protocol).allProtocols.indexOf(preference) >= 0) {
+        if ($meta(protocol).protocols.indexOf(preference) >= 0) {
             matches.push(protocol);
         }
     }
 }
 
 function _toplevelProtocols(type) {
-    const protocols = $meta(type).allProtocols,
+    const protocols = $meta(type).protocols,
           toplevel  = protocols.slice();
     for (let protocol of protocols) {
-        const parents = $meta(protocol).allProtocols;
+        const parents = $meta(protocol).protocols;
         for (let parent of parents) {
             const index = toplevel.indexOf(parent);
             if (index >= 0) toplevel.splice(index, 1);
@@ -1324,31 +1324,24 @@ function _toplevelProtocols(type) {
  */
 export const InjectionPolicy = Base.extend(ComponentPolicy, {
     applyPolicy(componentModel) {
-        // Dependencies will be merged from inject definitions
+        // Dependencies will be merged from inject metadata
         // starting from most derived unitl no more remain or the
         // current definition is fully specified (no holes).
         if (componentModel.allDependenciesDefined()) {
             return;
         }
-        let type = componentModel.implementation;
+        let meta = $meta(componentModel.implementation);
         componentModel.manageDependencies(manager => {
-            while (type && (type !== Base) && (type !== Object)) {
-                const injects = [type.prototype.$inject,
-                                 type.prototype.inject,
-                                 type.$inject,
-                                 type.inject];
-                for (let inject of injects) {
-                    if (inject !== undefined) {
-                        if ($isFunction(inject)) {
-                            inject = inject();
-                        }
-                        manager.merge(inject);
-                        if (componentModel.allDependenciesDefined()) {
-                            return;
-                        }
+            while (meta) {
+                inject.getOwn(meta, "constructor", deps => {
+                    if (deps.length > 0) {
+                        manager.merge(deps);
                     }
+                });
+                if (componentModel.allDependenciesDefined()) {
+                    return;
                 }
-                type = Object.getPrototypeOf(type);
+                meta = meta.parent;
             }
         });
     }

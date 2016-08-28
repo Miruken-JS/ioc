@@ -327,21 +327,21 @@ define(['exports', 'miruken-core', 'miruken-callback', 'miruken-context', 'miruk
     var ComponentModel = exports.ComponentModel = _mirukenCore.Base.extend((_obj = {
         constructor: function constructor() {
             var _key = void 0,
-                _implementation = void 0,
+                _impl = void 0,
                 _lifestyle = void 0,
                 _factory = void 0,
                 _invariant = false,
                 _burden = {};
             this.extend({
                 get key() {
-                    return _key || _implementation;
+                    return _key || _impl;
                 },
                 set key(value) {
                     _key = value;
                 },
 
                 get implementation() {
-                    var impl = _implementation;
+                    var impl = _impl;
                     if (!impl && (0, _mirukenCore.$isClass)(_key)) {
                         impl = _key;
                     }
@@ -351,7 +351,7 @@ define(['exports', 'miruken-core', 'miruken-callback', 'miruken-context', 'miruk
                     if ((0, _mirukenCore.$isSomething)(value) && !(0, _mirukenCore.$isClass)(value)) {
                         throw new TypeError(value + ' is not a class.');
                     }
-                    _implementation = value;
+                    _impl = value;
                 },
 
                 get invariant() {
@@ -827,7 +827,7 @@ define(['exports', 'miruken-core', 'miruken-callback', 'miruken-context', 'miruk
                 },
                 anyService: function anyService() {
                     return selectKeys(function (keys, clazz) {
-                        var services = (0, _mirukenCore.$meta)(clazz).allProtocols;
+                        var services = (0, _mirukenCore.$meta)(clazz).protocols;
                         if (services.length > 0) {
                             keys.push(services[0]);
                         }
@@ -835,7 +835,7 @@ define(['exports', 'miruken-core', 'miruken-callback', 'miruken-context', 'miruk
                 },
                 allServices: function allServices() {
                     return selectKeys(function (keys, clazz) {
-                        return keys.push.apply(keys, _toConsumableArray((0, _mirukenCore.$meta)(clazz).allProtocols));
+                        return keys.push.apply(keys, _toConsumableArray((0, _mirukenCore.$meta)(clazz).protocols));
                     });
                 },
                 mostSpecificService: function mostSpecificService(service) {
@@ -998,7 +998,7 @@ define(['exports', 'miruken-core', 'miruken-callback', 'miruken-context', 'miruk
             for (var _iterator6 = toplevel[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
                 var protocol = _step6.value;
 
-                if ((0, _mirukenCore.$meta)(protocol).allProtocols.indexOf(preference) >= 0) {
+                if ((0, _mirukenCore.$meta)(protocol).protocols.indexOf(preference) >= 0) {
                     matches.push(protocol);
                 }
             }
@@ -1019,7 +1019,7 @@ define(['exports', 'miruken-core', 'miruken-callback', 'miruken-context', 'miruk
     }
 
     function _toplevelProtocols(type) {
-        var protocols = (0, _mirukenCore.$meta)(type).allProtocols,
+        var protocols = (0, _mirukenCore.$meta)(type).protocols,
             toplevel = protocols.slice();
         var _iteratorNormalCompletion7 = true;
         var _didIteratorError7 = false;
@@ -1029,7 +1029,7 @@ define(['exports', 'miruken-core', 'miruken-callback', 'miruken-context', 'miruk
             for (var _iterator7 = protocols[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
                 var protocol = _step7.value;
 
-                var parents = (0, _mirukenCore.$meta)(protocol).allProtocols;
+                var parents = (0, _mirukenCore.$meta)(protocol).protocols;
                 var _iteratorNormalCompletion8 = true;
                 var _didIteratorError8 = false;
                 var _iteratorError8 = undefined;
@@ -1079,44 +1079,18 @@ define(['exports', 'miruken-core', 'miruken-callback', 'miruken-context', 'miruk
             if (componentModel.allDependenciesDefined()) {
                 return;
             }
-            var type = componentModel.implementation;
+            var meta = (0, _mirukenCore.$meta)(componentModel.implementation);
             componentModel.manageDependencies(function (manager) {
-                while (type && type !== _mirukenCore.Base && type !== Object) {
-                    var injects = [type.prototype.$inject, type.prototype.inject, type.$inject, type.inject];
-                    var _iteratorNormalCompletion9 = true;
-                    var _didIteratorError9 = false;
-                    var _iteratorError9 = undefined;
-
-                    try {
-                        for (var _iterator9 = injects[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-                            var inject = _step9.value;
-
-                            if (inject !== undefined) {
-                                if ((0, _mirukenCore.$isFunction)(inject)) {
-                                    inject = inject();
-                                }
-                                manager.merge(inject);
-                                if (componentModel.allDependenciesDefined()) {
-                                    return;
-                                }
-                            }
+                while (meta) {
+                    _mirukenCore.inject.getOwn(meta, "constructor", function (deps) {
+                        if (deps.length > 0) {
+                            manager.merge(deps);
                         }
-                    } catch (err) {
-                        _didIteratorError9 = true;
-                        _iteratorError9 = err;
-                    } finally {
-                        try {
-                            if (!_iteratorNormalCompletion9 && _iterator9.return) {
-                                _iterator9.return();
-                            }
-                        } finally {
-                            if (_didIteratorError9) {
-                                throw _iteratorError9;
-                            }
-                        }
+                    });
+                    if (componentModel.allDependenciesDefined()) {
+                        return;
                     }
-
-                    type = Object.getPrototypeOf(type);
+                    meta = meta.parent;
                 }
             });
         }
@@ -1143,29 +1117,29 @@ define(['exports', 'miruken-core', 'miruken-callback', 'miruken-context', 'miruk
 
                     policies = (0, _mirukenCore.$flatten)(policies, true);
                     policies = policies.length > 0 ? _policies.concat(policies) : _policies;
-                    var _iteratorNormalCompletion10 = true;
-                    var _didIteratorError10 = false;
-                    var _iteratorError10 = undefined;
+                    var _iteratorNormalCompletion9 = true;
+                    var _didIteratorError9 = false;
+                    var _iteratorError9 = undefined;
 
                     try {
-                        for (var _iterator10 = policies[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
-                            var policy = _step10.value;
+                        for (var _iterator9 = policies[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+                            var policy = _step9.value;
 
                             if ((0, _mirukenCore.$isFunction)(policy.applyPolicy)) {
                                 policy.applyPolicy(componentModel, policies);
                             }
                         }
                     } catch (err) {
-                        _didIteratorError10 = true;
-                        _iteratorError10 = err;
+                        _didIteratorError9 = true;
+                        _iteratorError9 = err;
                     } finally {
                         try {
-                            if (!_iteratorNormalCompletion10 && _iterator10.return) {
-                                _iterator10.return();
+                            if (!_iteratorNormalCompletion9 && _iterator9.return) {
+                                _iterator9.return();
                             }
                         } finally {
-                            if (_didIteratorError10) {
-                                throw _iteratorError10;
+                            if (_didIteratorError9) {
+                                throw _iteratorError9;
                             }
                         }
                     }

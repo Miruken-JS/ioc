@@ -1,6 +1,7 @@
 import {
     Base, Protocol, Resolving, Disposing,
-    Interceptor, $isString, $optional, $every
+    Interceptor, inject, $isString,
+    $optional, $every, nothing as _
 } from 'miruken-core';
 
 export const Engine = Resolving.extend({
@@ -26,7 +27,7 @@ export const Junkyard = Protocol.extend({
 });
 
 export const V12 = Base.extend(Engine, {
-    $inject: [,,$optional(Diagnostics)],
+    @inject(_,_,$optional(Diagnostics))
     constructor(horsepower, displacement, diagnostics) {
         let _rpm;
         this.extend({
@@ -50,8 +51,8 @@ export const V12 = Base.extend(Engine, {
 });
 
 export const RebuiltV12 = V12.extend(Engine, Disposing, {
-    $inject: [,,,Junkyard],
-    constructor: function (horsepower, displacement, diagnostics, junkyard) {
+    @inject(_,_,_,Junkyard)
+    constructor(horsepower, displacement, diagnostics, junkyard) {
         this.base(horsepower, displacement, diagnostics, junkyard);
         this.extend({
             dispose() {
@@ -62,7 +63,7 @@ export const RebuiltV12 = V12.extend(Engine, Disposing, {
 });
 
 export const Supercharger = Base.extend(Engine, {
-    $inject: [Engine],
+    @inject(Engine)
     constructor(engine, boost) {
         this.extend({
             get horsepower() {
@@ -76,7 +77,7 @@ export const Supercharger = Base.extend(Engine, {
 });
 
 export const Ferrari = Base.extend(Car, {
-    $inject: [,Engine],
+    @inject(_,Engine)
     constructor(model, engine) {
         this.extend({
             get make() { return "Ferrari"; },
@@ -87,7 +88,7 @@ export const Ferrari = Base.extend(Car, {
 });
 
 export const Bugatti = Base.extend(Car, {
-    $inject: [,Engine],
+    @inject(_,Engine)
     constructor(model, engine) {
         this.extend({
             get make() { return "Bugatti"; },
@@ -98,7 +99,7 @@ export const Bugatti = Base.extend(Car, {
 });
 
 export const Auction = Base.extend({
-    $inject: [$every(Car)],
+    @inject($every(Car))
     constructor(cars) {
         let inventory = {};
         cars.forEach(car => {

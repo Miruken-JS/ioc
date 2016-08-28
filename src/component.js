@@ -35,21 +35,21 @@ const proxyBuilder = new ProxyBuilder();
  */
 export const ComponentModel = Base.extend({
     constructor() {
-        let _key, _implementation, _lifestyle, _factory,
+        let _key, _impl, _lifestyle, _factory,
             _invariant = false, _burden = {};
         this.extend({
             /**
              * Gets/sets the component key.
              * @property {Any} key
              */
-            get key() { return _key || _implementation },
+            get key() { return _key || _impl },
             set key(value) { _key = value; },
             /**
              * Gets/sets the component class.
              * @property {Functon} implementation
              */
             get implementation() {
-                let impl = _implementation;
+                let impl = _impl;
                 if (!impl && $isClass(_key)) {
                     impl = _key;
                 }
@@ -59,7 +59,7 @@ export const ComponentModel = Base.extend({
                 if ($isSomething(value) && !$isClass(value)) {
                     throw new TypeError(`${value} is not a class.`);
                 }
-                _implementation = value;
+                _impl = value;
             },
             /**
              * Gets/sets if component is invariant.

@@ -230,7 +230,7 @@ export const KeyBuilder = Base.extend({
              */
             anyService() {
                 return selectKeys((keys, clazz) => {
-                    const services = $meta(clazz).allProtocols;
+                    const services = $meta(clazz).protocols;
                     if (services.length > 0) {
                         keys.push(services[0]);
                     }
@@ -242,7 +242,7 @@ export const KeyBuilder = Base.extend({
              * @returns {BasedOnBuilder} based on builder.
              */
             allServices() {
-                return selectKeys((keys, clazz) => keys.push(...$meta(clazz).allProtocols));
+                return selectKeys((keys, clazz) => keys.push(...$meta(clazz).protocols));
             },
             /**
              * Uses the most specific {{#crossLink "Protocol"}}{{/crossLink}} 
@@ -365,17 +365,17 @@ function _unregisterBatch(registrations) {
 function _addMatchingProtocols(clazz, preference, matches) {
     const toplevel = _toplevelProtocols(clazz);
     for (let protocol of toplevel) {
-        if ($meta(protocol).allProtocols.indexOf(preference) >= 0) {
+        if ($meta(protocol).protocols.indexOf(preference) >= 0) {
             matches.push(protocol);
         }
     }
 }
 
 function _toplevelProtocols(type) {
-    const protocols = $meta(type).allProtocols,
+    const protocols = $meta(type).protocols,
           toplevel  = protocols.slice();
     for (let protocol of protocols) {
-        const parents = $meta(protocol).allProtocols;
+        const parents = $meta(protocol).protocols;
         for (let parent of parents) {
             const index = toplevel.indexOf(parent);
             if (index >= 0) toplevel.splice(index, 1);

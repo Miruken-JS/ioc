@@ -1,4 +1,4 @@
-import { Base, Protocol } from 'miruken-core';
+import { Base, Protocol, inject } from 'miruken-core';
 import { Installer, $classes } from '../src/fluent';
 
 export const Controller = Base.extend();
@@ -19,7 +19,7 @@ export const Authentication = Protocol.extend(Service, {
 });
 
 export const LoginController = Controller.extend({
-    $inject: [Authentication],
+    @inject(Authentication)
     constructor(authenticator) {
         this.extend({
             login(credentials) {

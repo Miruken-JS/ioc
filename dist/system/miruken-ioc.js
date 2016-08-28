@@ -3,7 +3,7 @@
 System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken-validate'], function (_export, _context) {
     "use strict";
 
-    var Protocol, StrictProtocol, Invoking, Disposing, Flags, Base, ArrayManager, Modifier, $createModifier, $use, $lazy, $every, $eval, $child, $optional, $promise, $eq, Abstract, DisposingMixin, $isFunction, Facet, ProxyBuilder, $isSomething, $isProtocol, $isClass, $flatten, $isNothing, $meta, $isPromise, $instant, Resolution, CallbackHandler, $provide, $composer, $NOT_HANDLED, Context, ContextualHelper, validateThat, Validator, _desc, _value, _obj, _typeof, ComponentPolicy, Registration, Container, $$composer, $container, DependencyModifier, DependencyModel, DependencyManager, DependencyResolution, Lifestyle, TransientLifestyle, SingletonLifestyle, ContextualLifestyle, proxyBuilder, ComponentModel, NO_ARGS, ComponentBuilder, InterceptorBuilder, Installer, FromBuilder, FromPackageBuilder, BasedOnBuilder, KeyBuilder, InjectionPolicy, InitializationPolicy, DEFAULT_POLICIES, IoContainer;
+    var Protocol, StrictProtocol, Invoking, Disposing, Flags, Base, ArrayManager, Modifier, $createModifier, $use, $lazy, $every, $eval, $child, $optional, $promise, $eq, Abstract, DisposingMixin, $isFunction, Facet, ProxyBuilder, $isSomething, $isProtocol, $isClass, $flatten, $isNothing, $meta, inject, $isPromise, $instant, Resolution, CallbackHandler, $provide, $composer, $NOT_HANDLED, Context, ContextualHelper, validateThat, Validator, _desc, _value, _obj, _typeof, ComponentPolicy, Registration, Container, $$composer, $container, DependencyModifier, DependencyModel, DependencyManager, DependencyResolution, Lifestyle, TransientLifestyle, SingletonLifestyle, ContextualLifestyle, proxyBuilder, ComponentModel, NO_ARGS, ComponentBuilder, InterceptorBuilder, Installer, FromBuilder, FromPackageBuilder, BasedOnBuilder, KeyBuilder, InjectionPolicy, InitializationPolicy, DEFAULT_POLICIES, IoContainer;
 
     function _toConsumableArray(arr) {
         if (Array.isArray(arr)) {
@@ -98,7 +98,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
             for (var _iterator6 = toplevel[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
                 var protocol = _step6.value;
 
-                if ($meta(protocol).allProtocols.indexOf(preference) >= 0) {
+                if ($meta(protocol).protocols.indexOf(preference) >= 0) {
                     matches.push(protocol);
                 }
             }
@@ -119,7 +119,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
     }
 
     function _toplevelProtocols(type) {
-        var protocols = $meta(type).allProtocols,
+        var protocols = $meta(type).protocols,
             toplevel = protocols.slice();
         var _iteratorNormalCompletion7 = true;
         var _didIteratorError7 = false;
@@ -129,7 +129,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
             for (var _iterator7 = protocols[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
                 var protocol = _step7.value;
 
-                var parents = $meta(protocol).allProtocols;
+                var parents = $meta(protocol).protocols;
                 var _iteratorNormalCompletion8 = true;
                 var _didIteratorError8 = false;
                 var _iteratorError8 = undefined;
@@ -374,6 +374,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
             $flatten = _mirukenCore.$flatten;
             $isNothing = _mirukenCore.$isNothing;
             $meta = _mirukenCore.$meta;
+            inject = _mirukenCore.inject;
             $isPromise = _mirukenCore.$isPromise;
             $instant = _mirukenCore.$instant;
         }, function (_mirukenCallback) {
@@ -693,21 +694,21 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
             _export('ComponentModel', ComponentModel = Base.extend((_obj = {
                 constructor: function constructor() {
                     var _key = void 0,
-                        _implementation = void 0,
+                        _impl = void 0,
                         _lifestyle = void 0,
                         _factory = void 0,
                         _invariant = false,
                         _burden = {};
                     this.extend({
                         get key() {
-                            return _key || _implementation;
+                            return _key || _impl;
                         },
                         set key(value) {
                             _key = value;
                         },
 
                         get implementation() {
-                            var impl = _implementation;
+                            var impl = _impl;
                             if (!impl && $isClass(_key)) {
                                 impl = _key;
                             }
@@ -717,7 +718,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
                             if ($isSomething(value) && !$isClass(value)) {
                                 throw new TypeError(value + ' is not a class.');
                             }
-                            _implementation = value;
+                            _impl = value;
                         },
 
                         get invariant() {
@@ -1199,7 +1200,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
                         },
                         anyService: function anyService() {
                             return selectKeys(function (keys, clazz) {
-                                var services = $meta(clazz).allProtocols;
+                                var services = $meta(clazz).protocols;
                                 if (services.length > 0) {
                                     keys.push(services[0]);
                                 }
@@ -1207,7 +1208,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
                         },
                         allServices: function allServices() {
                             return selectKeys(function (keys, clazz) {
-                                return keys.push.apply(keys, _toConsumableArray($meta(clazz).allProtocols));
+                                return keys.push.apply(keys, _toConsumableArray($meta(clazz).protocols));
                             });
                         },
                         mostSpecificService: function mostSpecificService(service) {
@@ -1339,44 +1340,18 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
                     if (componentModel.allDependenciesDefined()) {
                         return;
                     }
-                    var type = componentModel.implementation;
+                    var meta = $meta(componentModel.implementation);
                     componentModel.manageDependencies(function (manager) {
-                        while (type && type !== Base && type !== Object) {
-                            var injects = [type.prototype.$inject, type.prototype.inject, type.$inject, type.inject];
-                            var _iteratorNormalCompletion9 = true;
-                            var _didIteratorError9 = false;
-                            var _iteratorError9 = undefined;
-
-                            try {
-                                for (var _iterator9 = injects[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-                                    var inject = _step9.value;
-
-                                    if (inject !== undefined) {
-                                        if ($isFunction(inject)) {
-                                            inject = inject();
-                                        }
-                                        manager.merge(inject);
-                                        if (componentModel.allDependenciesDefined()) {
-                                            return;
-                                        }
-                                    }
+                        while (meta) {
+                            inject.getOwn(meta, "constructor", function (deps) {
+                                if (deps.length > 0) {
+                                    manager.merge(deps);
                                 }
-                            } catch (err) {
-                                _didIteratorError9 = true;
-                                _iteratorError9 = err;
-                            } finally {
-                                try {
-                                    if (!_iteratorNormalCompletion9 && _iterator9.return) {
-                                        _iterator9.return();
-                                    }
-                                } finally {
-                                    if (_didIteratorError9) {
-                                        throw _iteratorError9;
-                                    }
-                                }
+                            });
+                            if (componentModel.allDependenciesDefined()) {
+                                return;
                             }
-
-                            type = Object.getPrototypeOf(type);
+                            meta = meta.parent;
                         }
                     });
                 }
@@ -1407,29 +1382,29 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
 
                             policies = $flatten(policies, true);
                             policies = policies.length > 0 ? _policies.concat(policies) : _policies;
-                            var _iteratorNormalCompletion10 = true;
-                            var _didIteratorError10 = false;
-                            var _iteratorError10 = undefined;
+                            var _iteratorNormalCompletion9 = true;
+                            var _didIteratorError9 = false;
+                            var _iteratorError9 = undefined;
 
                             try {
-                                for (var _iterator10 = policies[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
-                                    var policy = _step10.value;
+                                for (var _iterator9 = policies[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+                                    var policy = _step9.value;
 
                                     if ($isFunction(policy.applyPolicy)) {
                                         policy.applyPolicy(componentModel, policies);
                                     }
                                 }
                             } catch (err) {
-                                _didIteratorError10 = true;
-                                _iteratorError10 = err;
+                                _didIteratorError9 = true;
+                                _iteratorError9 = err;
                             } finally {
                                 try {
-                                    if (!_iteratorNormalCompletion10 && _iterator10.return) {
-                                        _iterator10.return();
+                                    if (!_iteratorNormalCompletion9 && _iterator9.return) {
+                                        _iterator9.return();
                                     }
                                 } finally {
-                                    if (_didIteratorError10) {
-                                        throw _iteratorError10;
+                                    if (_didIteratorError9) {
+                                        throw _iteratorError9;
                                     }
                                 }
                             }

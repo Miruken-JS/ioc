@@ -1,6 +1,6 @@
 import {
-    Base,$isNothing, $isFunction,
-    $isPromise, $eq, $instant, $flatten
+    Base, inject, $isNothing, $isFunction,
+    $isPromise, $eq, $instant, $flatten, $meta
 } from 'miruken-core';
 
 import {
@@ -28,31 +28,24 @@ import {
  */
 export const InjectionPolicy = Base.extend(ComponentPolicy, {
     applyPolicy(componentModel) {
-        // Dependencies will be merged from inject definitions
+        // Dependencies will be merged from inject metadata
         // starting from most derived unitl no more remain or the
         // current definition is fully specified (no holes).
         if (componentModel.allDependenciesDefined()) {
             return;
         }
-        let type = componentModel.implementation;
+        let meta = $meta(componentModel.implementation);
         componentModel.manageDependencies(manager => {
-            while (type && (type !== Base) && (type !== Object)) {
-                const injects = [type.prototype.$inject,
-                                 type.prototype.inject,
-                                 type.$inject,
-                                 type.inject];
-                for (let inject of injects) {
-                    if (inject !== undefined) {
-                        if ($isFunction(inject)) {
-                            inject = inject();
-                        }
-                        manager.merge(inject);
-                        if (componentModel.allDependenciesDefined()) {
-                            return;
-                        }
+            while (meta) {
+                inject.getOwn(meta, "constructor", deps => {
+                    if (deps.length > 0) {
+                        manager.merge(deps);
                     }
+                });
+                if (componentModel.allDependenciesDefined()) {
+                    return;
                 }
-                type = Object.getPrototypeOf(type);
+                meta = meta.parent;
             }
         });
     }
