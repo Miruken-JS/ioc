@@ -2,24 +2,24 @@ import {
     Base, Facet, ProxyBuilder, $isSomething,
     $isFunction, $isProtocol, $isClass,
     $flatten, $use
-} from 'miruken-core';
+} from "miruken-core";
 
 import {
     Context, ContextualHelper
-} from 'miruken-context';
+} from "miruken-context";
 
-import { validateThat } from 'miruken-validate';
+import { validateThat } from "miruken-validate";
 
 import {
     Lifestyle, SingletonLifestyle,
     TransientLifestyle, ContextualLifestyle
-} from './lifestyle';
+} from "./lifestyle";
 
 import {
     DependencyModel, DependencyManager
-} from './dependency';
+} from "./dependency";
 
-import { Registration } from './container';
+import { Registration } from "./container";
 
 /**
  * Shared proxy builder

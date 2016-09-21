@@ -1,53 +1,46 @@
 import {
     Base, inject, $isNothing, $isFunction,
-    $isPromise, $eq, $instant, $flatten, $meta
-} from 'miruken-core';
+    $isPromise, $eq, $instant, $flatten
+} from "miruken-core";
 
 import {
     CallbackHandler, $provide, $composer, $NOT_HANDLED
-} from 'miruken-callback';
+} from "miruken-callback";
 
-import { Validator } from 'miruken-validate';
+import { Validator } from "miruken-validate";
 
-import { Container } from './container';
-import { ComponentPolicy } from './policy';
-import { ComponentModelError } from './component';
-import { SingletonLifestyle } from './lifestyle';
+import { Container } from "./container";
+import { ComponentPolicy } from "./policy";
+import { ComponentModelError } from "./component";
+import { SingletonLifestyle } from "./lifestyle";
 
 import {
     DependencyModifier, DependencyResolution,
     DependencyManager, DependencyResolutionError,
     $$composer
-} from './dependency';
+} from "./dependency";
 
 /**
- * Collects dependencies to be injected into components.
- * @class InjectionPolicy
+ * Collects constructor dependencies to be injected.
+ * @class ConstructorPolicy
  * @uses ComponentPolicy
  * @extends Base
  */
-export const InjectionPolicy = Base.extend(ComponentPolicy, {
+export const ConstructorPolicy = Base.extend(ComponentPolicy, {
     applyPolicy(componentModel) {
+        const implementation = componentModel.implementation;
+        
         // Dependencies will be merged from inject metadata
         // starting from most derived unitl no more remain or the
         // current definition is fully specified (no holes).
-        if (componentModel.allDependenciesDefined()) {
+        if (!implementation || componentModel.allDependenciesDefined()) {
             return;
         }
-        let meta = $meta(componentModel.implementation);
-        componentModel.manageDependencies(manager => {
-            while (meta) {
-                inject.getOwn(meta, "constructor", deps => {
-                    if (deps.length > 0) {
-                        manager.merge(deps);
-                    }
-                });
-                if (componentModel.allDependenciesDefined()) {
-                    return;
-                }
-                meta = meta.parent;
-            }
-        });
+        componentModel.manageDependencies(manager => inject.collect(
+            implementation.prototype, "constructor", deps => {
+                if (deps.length > 0) { manager.merge(deps); }
+                return componentModel.allDependenciesDefined()
+            }));
     }
 });
 
@@ -65,7 +58,7 @@ export const InitializationPolicy = Base.extend(ComponentPolicy, {
     }        
 });
 
-const DEFAULT_POLICIES = [ new InjectionPolicy(), new InitializationPolicy() ];
+const DEFAULT_POLICIES = [ new ConstructorPolicy(), new InitializationPolicy() ];
 
 /**
  * Default Inversion of Control {{#crossLink "Container"}}{{/crossLink}}.

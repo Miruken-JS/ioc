@@ -1,4 +1,8 @@
-import { Protocol } from 'miruken-core';
+import {
+    Protocol, Metadata, $flatten
+} from "miruken-core";
+
+const policyMetadataKey = Symbol();
 
 /**
  * Protocol for defining policies for components.
@@ -22,3 +26,13 @@ export const ComponentPolicy = Protocol.extend({
      */        
     componentCreated(component, dependencies, composer) {}
 });
+
+export function policy(...policies) {
+    policies = $flatten(policies, true);
+    return function (target) {
+        const p = policy.getOwn(target)
+    };
+}
+
+policy.getOwn = Metadata.getter(policyMetadataKey, true);
+policy.get    = Metadata.getter(policyMetadataKey);

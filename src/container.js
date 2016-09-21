@@ -1,6 +1,6 @@
 import {
     Protocol, StrictProtocol, Invoking, Disposing
-} from 'miruken-core';
+} from "miruken-core";
 
 /**
  * Protocol for registering components in a {{#crossLink "Container"}}{{/crossLink}}.

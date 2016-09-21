@@ -3,9 +3,9 @@ import {
     $createModifier, $use, $lazy,
     $every, $eval, $child, $optional,
     $promise, $eq
-} from 'miruken-core';
+} from "miruken-core";
 
-import { Resolution } from 'miruken-callback';
+import { Resolution } from "miruken-callback";
 
 /**
  * Symbol for injecting composer dependency.<br/>

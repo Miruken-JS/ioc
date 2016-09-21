@@ -2,33 +2,33 @@ import {
     Base, Facet, Modifier, inject, $isPromise,
     $using, $decorated, $promise, $optional,
     $eq, $use, $lazy, $instant,$eval, $child
-} from 'miruken-core';
+} from "miruken-core";
 
-import { $provide } from 'miruken-callback';
-import { Context, contextual } from 'miruken-context';
+import { $provide } from "miruken-callback";
+import { Context, contextual } from "miruken-context";
 
 import {
     Validator, ValidationCallbackHandler
-} from 'miruken-validate';
+} from "miruken-validate";
 
 import {
     DependencyModel, DependencyModifier,
     DependencyResolutionError,
     $$composer, $container
-} from '../src/dependency';
+} from "../src/dependency";
 
-import { ComponentPolicy } from '../src/policy';
+import { ComponentPolicy } from "../src/policy";
 import {
     ComponentModel, ComponentModelError, $component
-} from '../src/component';
+} from "../src/component";
 
-import { TransientLifestyle } from '../src/lifestyle';
-import { Container } from '../src/container';
-import { IoContainer } from '../src/ioc';
+import { TransientLifestyle } from "../src/lifestyle";
+import { Container } from "../src/container";
+import { IoContainer } from "../src/ioc";
 
-import { expect } from 'chai';
+import { expect } from "chai";
 
-import * as car from './car-model';
+import * as car from "./car-model";
 
 describe("DependencyModel", () => {
     describe("#dependency", () => {
@@ -78,7 +78,7 @@ describe("ComponentModel", () => {
         it("should return default factory", () => {
             const componentModel = new ComponentModel();
             componentModel.implementation = car.Ferrari;
-            expect(componentModel.factory).to.be.a('function');
+            expect(componentModel.factory).to.be.a("function");
         });
     });
 
@@ -183,8 +183,8 @@ describe("ComponentModel", () => {
         });
 
         it("should configure component name", done => {
-            container.register($component('engine').boundTo(car.V12));
-            Promise.resolve(container.resolve('engine')).then(engine => {
+            container.register($component("engine").boundTo(car.V12));
+            Promise.resolve(container.resolve("engine")).then(engine => {
                 expect(engine).to.be.instanceOf(car.V12);
                 done();
             });
@@ -278,8 +278,8 @@ describe("ComponentBuilder", () => {
         });
             
         it("should configure component name", done => {
-            container.register($component('engine').boundTo(car.V12));
-            Promise.resolve(container.resolve('engine')).then(engine => {
+            container.register($component("engine").boundTo(car.V12));
+            Promise.resolve(container.resolve("engine")).then(engine => {
                 expect(engine).to.be.instanceOf(car.V12);
                 done();
             });
@@ -335,9 +335,6 @@ describe("SingletonLifestyle", () => {
             context.addHandlers(new IoContainer(), new ValidationCallbackHandler());
             const unregister = container.register(
                 $component(car.RebuiltV12).singleton(), $component(car.CraigsJunk))[0];
-            inject.get(car.RebuiltV12, (d, k) => {
-                console.log(k);
-            });
             Promise.all([container.resolve(car.Engine), container.resolve(car.Junkyard)])
                 .then(([engine, junk]) => {
                     unregister();
@@ -561,7 +558,7 @@ describe("IoContainer", () => {
         });
 
         it("should register component from name and class", () => {
-            container.register($component('car').boundTo(car.Ferrari));
+            container.register($component("car").boundTo(car.Ferrari));
         });
 
         it("should register component as singletons by default", done => {
@@ -599,7 +596,7 @@ describe("IoContainer", () => {
 
         it("should reject registration if no factory", done => {
             try {
-                container.register($component('car'));
+                container.register($component("car"));
             }
             catch (error) {
                 expect(error).to.be.instanceOf(ComponentModelError);
@@ -738,7 +735,7 @@ describe("IoContainer", () => {
 
         it("should override dependencies", done => {
             container.register(
-                $component(car.Ferrari).dependsOn($use('Enzo'), $optional(car.Engine)),
+                $component(car.Ferrari).dependsOn($use("Enzo"), $optional(car.Engine)),
                 $component(car.V12));
             Promise.resolve(container.resolve(car.Car)).then(c => {
                 expect(c).to.be.instanceOf(car.Ferrari);
@@ -837,7 +834,7 @@ describe("IoContainer", () => {
         });
 
         it("should resolve instance with invariant dependencies", done => {
-            container.register($component(car.Ferrari).dependsOn($use('Spider'), $eq(car.V12)),
+            container.register($component(car.Ferrari).dependsOn($use("Spider"), $eq(car.V12)),
                                $component(car.Engine).boundTo(car.V12));
             Promise.resolve(container.resolve(car.Car)).catch(error => {
                 expect(error).to.be.instanceof(DependencyResolutionError);
@@ -939,11 +936,11 @@ describe("IoContainer", () => {
                   container = new IoContainer();
             context.addHandlers(container, new ValidationCallbackHandler());
             $provide(container, car.Car, (resolution, composer) => {
-                return new car.Ferrari('TRS', new car.V12(917, 6.3));
+                return new car.Ferrari("TRS", new car.V12(917, 6.3));
             });
             Promise.resolve(Container(context).resolve(car.Car)).then(c => {
                 expect(c).to.be.instanceOf(car.Ferrari);
-                expect(c.model).to.equal('TRS');
+                expect(c.model).to.equal("TRS");
                 expect(c.engine).to.be.instanceOf(car.V12);
                 done();
             });
@@ -1069,33 +1066,33 @@ describe("IoContainer", () => {
         });
 
         it("should resolve collection dependencies", done => {
-            container.register($component(car.Ferrari).dependsOn($use('LaFerrari')),
-                               $component(car.Bugatti).dependsOn($use('Veyron')),
+            container.register($component(car.Ferrari).dependsOn($use("LaFerrari")),
+                               $component(car.Bugatti).dependsOn($use("Veyron")),
                                $component(car.V12), $component(car.Auction));
             Promise.resolve(container.resolve(car.Auction)).then(auction => {
                 const cars = auction.cars;
-                expect(cars['Ferrari']).to.have.length(1);
-                expect(cars['Bugatti']).to.have.length(1);
+                expect(cars["Ferrari"]).to.have.length(1);
+                expect(cars["Bugatti"]).to.have.length(1);
                 done();
             });
         });
 
         it("should resolve collection dependencies from child containers", done => {
-            container.register($component(car.Ferrari).dependsOn($use('LaFerrari')),
-                               $component(car.Bugatti).dependsOn($use('Veyron')),
+            container.register($component(car.Ferrari).dependsOn($use("LaFerrari")),
+                               $component(car.Bugatti).dependsOn($use("Veyron")),
                                $component(car.V12));
             const childContext = context.newChild();
             $using(childContext, ctx => {
                    Container(ctx).register(
-                       $component(car.Ferrari).dependsOn($use('California')),
+                       $component(car.Ferrari).dependsOn($use("California")),
                        $component(car.Auction)
                    );
                    Promise.resolve(Container(ctx).resolve(car.Auction)).then(auction => {
                        const cars  = auction.cars;
-                       expect(cars['Ferrari']).to.have.length(2);
-                       const ferraris = cars['Ferrari'].map(ferrari => ferrari.model);
-                       expect(ferraris).to.eql(['LaFerrari', 'California']);
-                       expect(cars['Bugatti']).to.have.length(1);
+                       expect(cars["Ferrari"]).to.have.length(2);
+                       const ferraris = cars["Ferrari"].map(ferrari => ferrari.model);
+                       expect(ferraris).to.eql(["LaFerrari", "California"]);
+                       expect(cars["Bugatti"]).to.have.length(1);
                        done();
                    });
             });
@@ -1155,16 +1152,16 @@ describe("IoContainer", () => {
         });
 
         it("should resolve all components", done => {
-            container.register($component(car.Ferrari).dependsOn($use('LaFerrari')),
-                               $component(car.Bugatti).dependsOn($use('Veyron')),
+            container.register($component(car.Ferrari).dependsOn($use("LaFerrari")),
+                               $component(car.Bugatti).dependsOn($use("Veyron")),
                                $component(car.V12));
             Promise.resolve(container.resolveAll(car.Car)).then(cars => {
                 const makes     = cars.map(c => c.make),
                       models    = cars.map(c => c.model),
                       inventory = {};
                 makes.forEach((make, i) => inventory[make] = models[i]);
-                expect(inventory['Ferrari']).to.equal('LaFerrari');
-                expect(inventory['Bugatti']).to.equal('Veyron');
+                expect(inventory["Ferrari"]).to.equal("LaFerrari");
+                expect(inventory["Bugatti"]).to.equal("Veyron");
                 done();
             });
         });

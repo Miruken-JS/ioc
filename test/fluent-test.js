@@ -1,15 +1,15 @@
-import { $eq } from 'miruken-core';
-import { Context } from 'miruken-context';
-import { $component } from '../src/component';
-import { $classes } from '../src/fluent';
-import { Container } from '../src/container';
-import { IoContainer } from '../src/ioc';
+import { $eq } from "miruken-core";
+import { Context } from "miruken-context";
+import { $component } from "../src/component";
+import { $classes } from "../src/fluent";
+import { Container } from "../src/container";
+import { IoContainer } from "../src/ioc";
 
-import { ValidationCallbackHandler } from 'miruken-validate';
+import { ValidationCallbackHandler } from "miruken-validate";
 
-import * as lib from './fluent-model';
+import * as lib from "./fluent-model";
 
-import { expect } from 'chai';
+import { expect } from "chai";
 
 describe("$classes", () => {
     let context, container;

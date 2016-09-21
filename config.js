@@ -22,6 +22,7 @@ System.config({
     "miruken-context": "npm:miruken-context@0.0.1",
     "miruken-core": "npm:miruken-core@0.0.1",
     "miruken-validate": "npm:miruken-validate@0.0.1",
+    "reflect-metadata": "npm:reflect-metadata@0.1.8",
     "–latest": "npm:babel-core@5.8.38",
     "–latest-runtime": "npm:babel-runtime@5.8.38",
     "github:jspm/nodelibs-assert@0.1.0": {

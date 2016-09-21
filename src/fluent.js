@@ -1,10 +1,10 @@
 import {
-    Base, $isNothing, $isProtocol,
-    $isClass, $isFunction, $flatten, $meta
-} from 'miruken-core';
+    Base, $isNothing, $isProtocol, $protocols,
+    $isClass, $isFunction, $flatten
+} from "miruken-core";
 
-import { Registration } from './container';
-import { $component } from './component';
+import { Registration } from "./container";
+import { $component } from "./component";
 
 /**
  * Base class for installing one or more components into a 
@@ -168,7 +168,7 @@ export const BasedOnBuilder = Base.extend(Registration, {
                 }
                 for (let constraint of constraints) {
                     if ($isProtocol(constraint)) {
-                        if (!constraint.adoptedBy(clazz)) {
+                        if (!constraint.isAdoptedBy(clazz)) {
                             continue;
                         }
                     } else if ($isClass(constraint)) {
@@ -230,7 +230,7 @@ export const KeyBuilder = Base.extend({
              */
             anyService() {
                 return selectKeys((keys, clazz) => {
-                    const services = $meta(clazz).protocols;
+                    const services = $protocols(clazz);
                     if (services.length > 0) {
                         keys.push(services[0]);
                     }
@@ -242,7 +242,7 @@ export const KeyBuilder = Base.extend({
              * @returns {BasedOnBuilder} based on builder.
              */
             allServices() {
-                return selectKeys((keys, clazz) => keys.push(...$meta(clazz).protocols));
+                return selectKeys((keys, clazz) => keys.push(...$protocols(clazz)));
             },
             /**
              * Uses the most specific {{#crossLink "Protocol"}}{{/crossLink}} 
@@ -265,7 +265,7 @@ export const KeyBuilder = Base.extend({
                         for (let constraint of constraints) {
                             if (constraint !== Base && constraint !== Object) {
                                 if ($isProtocol(constraint)) {
-                                    if (constraint.adoptedBy(clazz)) {
+                                    if (constraint.isAdoptedBy(clazz)) {
                                         keys.push(constraint);
                                         break;
                                     }
@@ -365,17 +365,17 @@ function _unregisterBatch(registrations) {
 function _addMatchingProtocols(clazz, preference, matches) {
     const toplevel = _toplevelProtocols(clazz);
     for (let protocol of toplevel) {
-        if ($meta(protocol).protocols.indexOf(preference) >= 0) {
+        if ($protocols(protocol).indexOf(preference) >= 0) {
             matches.push(protocol);
         }
     }
 }
 
 function _toplevelProtocols(type) {
-    const protocols = $meta(type).protocols,
+    const protocols = $protocols(type),
           toplevel  = protocols.slice();
     for (let protocol of protocols) {
-        const parents = $meta(protocol).protocols;
+        const parents = $protocols(protocol);
         for (let parent of parents) {
             const index = toplevel.indexOf(parent);
             if (index >= 0) toplevel.splice(index, 1);

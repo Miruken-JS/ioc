@@ -1,10 +1,10 @@
 import {
     Abstract, Disposing, DisposingMixin,
     $isFunction
-} from 'miruken-core';
+} from "miruken-core";
 
-import { Context, ContextualHelper } from 'miruken-context';
-import { ComponentPolicy } from './policy';
+import { Context, ContextualHelper } from "miruken-context";
+import { ComponentPolicy } from "./policy";
 
 /**
  * Manages the creation and destruction of components.
