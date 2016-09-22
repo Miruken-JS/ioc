@@ -1,7 +1,9 @@
-import {Protocol,StrictProtocol,Invoking,Disposing,Flags,Base,ArrayManager,Modifier,$createModifier,$use,$lazy,$every,$eval,$child,$optional,$promise,$eq,Abstract,DisposingMixin,$isFunction,Facet,ProxyBuilder,$isSomething,$isProtocol,$isClass,$flatten,$isNothing,$meta,inject,$isPromise,$instant} from 'miruken-core';
+import {Protocol,Metadata,$flatten,StrictProtocol,Invoking,Disposing,Flags,Base,ArrayManager,Modifier,$createModifier,$use,$lazy,$every,$eval,$child,$optional,$promise,$eq,Abstract,DisposingMixin,$isFunction,Facet,ProxyBuilder,$isSomething,$isProtocol,$isClass,$isNothing,$protocols,inject,$isPromise,$instant} from 'miruken-core';
 import {Resolution,CallbackHandler,$provide,$composer,$NOT_HANDLED} from 'miruken-callback';
 import {Context,ContextualHelper} from 'miruken-context';
 import {validateThat,Validator} from 'miruken-validate';
+
+const policyMetadataKey = Symbol();
 
 /**
  * Protocol for defining policies for components.
@@ -25,6 +27,22 @@ export const ComponentPolicy = Protocol.extend({
      */        
     componentCreated(component, dependencies, composer) {}
 });
+
+/**
+ * Attaches one or more policies to a component.
+ * @method policy
+ * @param  {Array}  ...policies  -  component policies
+ */  
+export const policy = Metadata.decorator(policyMetadataKey,
+    (target, key, descriptor, policies) => {
+        policies = $flatten(policies, true);
+        return target => {
+            if (policies.length > 0) {
+                Metadata.getOrCreateOwn(policyMetadataKey, target, () => [])
+                    .push(...policies);
+            }
+        };
+    });     
 
 /**
  * Protocol for registering components in a {{#crossLink "Container"}}{{/crossLink}}.
@@ -1100,7 +1118,7 @@ export const BasedOnBuilder = Base.extend(Registration, {
                 }
                 for (let constraint of constraints) {
                     if ($isProtocol(constraint)) {
-                        if (!constraint.adoptedBy(clazz)) {
+                        if (!constraint.isAdoptedBy(clazz)) {
                             continue;
                         }
                     } else if ($isClass(constraint)) {
@@ -1162,7 +1180,7 @@ export const KeyBuilder = Base.extend({
              */
             anyService() {
                 return selectKeys((keys, clazz) => {
-                    const services = $meta(clazz).protocols;
+                    const services = $protocols(clazz);
                     if (services.length > 0) {
                         keys.push(services[0]);
                     }
@@ -1174,7 +1192,7 @@ export const KeyBuilder = Base.extend({
              * @returns {BasedOnBuilder} based on builder.
              */
             allServices() {
-                return selectKeys((keys, clazz) => keys.push(...$meta(clazz).protocols));
+                return selectKeys((keys, clazz) => keys.push(...$protocols(clazz)));
             },
             /**
              * Uses the most specific {{#crossLink "Protocol"}}{{/crossLink}} 
@@ -1197,7 +1215,7 @@ export const KeyBuilder = Base.extend({
                         for (let constraint of constraints) {
                             if (constraint !== Base && constraint !== Object) {
                                 if ($isProtocol(constraint)) {
-                                    if (constraint.adoptedBy(clazz)) {
+                                    if (constraint.isAdoptedBy(clazz)) {
                                         keys.push(constraint);
                                         break;
                                     }
@@ -1297,17 +1315,17 @@ function _unregisterBatch(registrations) {
 function _addMatchingProtocols(clazz, preference, matches) {
     const toplevel = _toplevelProtocols(clazz);
     for (let protocol of toplevel) {
-        if ($meta(protocol).protocols.indexOf(preference) >= 0) {
+        if ($protocols(protocol).indexOf(preference) >= 0) {
             matches.push(protocol);
         }
     }
 }
 
 function _toplevelProtocols(type) {
-    const protocols = $meta(type).protocols,
+    const protocols = $protocols(type),
           toplevel  = protocols.slice();
     for (let protocol of protocols) {
-        const parents = $meta(protocol).protocols;
+        const parents = $protocols(protocol);
         for (let parent of parents) {
             const index = toplevel.indexOf(parent);
             if (index >= 0) toplevel.splice(index, 1);
@@ -1317,33 +1335,28 @@ function _toplevelProtocols(type) {
 }
 
 /**
- * Collects dependencies to be injected into components.
- * @class InjectionPolicy
+ * Collects constructor dependencies to be injected.
+ * @class ConstructorPolicy
  * @uses ComponentPolicy
  * @extends Base
  */
-export const InjectionPolicy = Base.extend(ComponentPolicy, {
+export const ConstructorPolicy = Base.extend(ComponentPolicy, {
     applyPolicy(componentModel) {
+        const implementation = componentModel.implementation;
+        
         // Dependencies will be merged from inject metadata
         // starting from most derived unitl no more remain or the
         // current definition is fully specified (no holes).
-        if (componentModel.allDependenciesDefined()) {
+        if (!implementation || componentModel.allDependenciesDefined()) {
             return;
         }
-        let meta = $meta(componentModel.implementation);
-        componentModel.manageDependencies(manager => {
-            while (meta) {
-                inject.getOwn(meta, "constructor", deps => {
-                    if (deps.length > 0) {
-                        manager.merge(deps);
-                    }
-                });
-                if (componentModel.allDependenciesDefined()) {
-                    return;
+        componentModel.manageDependencies(manager => inject.collect(
+            implementation.prototype, "constructor", deps => {
+                if (deps.length > 0) {
+                    manager.merge(deps);
+                    return componentModel.allDependenciesDefined();
                 }
-                meta = meta.parent;
-            }
-        });
+            }));
     }
 });
 
@@ -1361,7 +1374,28 @@ export const InitializationPolicy = Base.extend(ComponentPolicy, {
     }        
 });
 
-const DEFAULT_POLICIES = [ new InjectionPolicy(), new InitializationPolicy() ];
+/**
+ * Expands any Metadata implementation policies to be applied.
+ * @class PolicyMetadataPolicy
+ * @uses ComponentPolicy
+ * @extends Base
+ */
+export const PolicyMetadataPolicy = Base.extend(ComponentPolicy, {
+    applyPolicy(componentModel, policies) {
+        const implementation = componentModel.implementation;
+        if (implementation) {
+            const index = policies.length;
+            policy.collect(implementation, ps => policies.splice(index, 0, ...ps));
+        }
+    }
+});
+
+
+const DEFAULT_POLICIES = [
+    new ConstructorPolicy(),
+    new InitializationPolicy(),
+    new PolicyMetadataPolicy()
+];
 
 /**
  * Default Inversion of Control {{#crossLink "Container"}}{{/crossLink}}.
@@ -1375,11 +1409,13 @@ export const IoContainer = CallbackHandler.extend(Container, {
         let _policies = DEFAULT_POLICIES;
         this.extend({
             addComponent(componentModel, ...policies) {
+                let policyIndex = 0;                
                 policies = $flatten(policies, true);
                 policies = policies.length > 0
                          ? _policies.concat(policies)
                          : _policies;
-                for (let policy of policies) {
+                while (policyIndex < policies.length) {
+                    const policy = policies[policyIndex++];
                     if ($isFunction(policy.applyPolicy)) {
                         policy.applyPolicy(componentModel, policies);
                     }

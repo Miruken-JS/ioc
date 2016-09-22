@@ -27,12 +27,18 @@ export const ComponentPolicy = Protocol.extend({
     componentCreated(component, dependencies, composer) {}
 });
 
-export function policy(...policies) {
-    policies = $flatten(policies, true);
-    return function (target) {
-        const p = policy.getOwn(target)
-    };
-}
-
-policy.getOwn = Metadata.getter(policyMetadataKey, true);
-policy.get    = Metadata.getter(policyMetadataKey);
+/**
+ * Attaches one or more policies to a component.
+ * @method policy
+ * @param  {Array}  ...policies  -  component policies
+ */  
+export const policy = Metadata.decorator(policyMetadataKey,
+    (target, key, descriptor, policies) => {
+        policies = $flatten(policies, true);
+        return target => {
+            if (policies.length > 0) {
+                Metadata.getOrCreateOwn(policyMetadataKey, target, () => [])
+                    .push(...policies);
+            }
+        };
+    });     

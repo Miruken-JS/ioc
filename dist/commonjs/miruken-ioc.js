@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.IoContainer = exports.InitializationPolicy = exports.InjectionPolicy = exports.KeyBuilder = exports.BasedOnBuilder = exports.FromPackageBuilder = exports.FromBuilder = exports.Installer = exports.InterceptorBuilder = exports.ComponentBuilder = exports.ComponentModel = exports.ContextualLifestyle = exports.SingletonLifestyle = exports.TransientLifestyle = exports.Lifestyle = exports.DependencyResolution = exports.DependencyManager = exports.DependencyModel = exports.DependencyModifier = exports.$container = exports.$$composer = exports.Container = exports.Registration = exports.ComponentPolicy = undefined;
+exports.IoContainer = exports.PolicyMetadataPolicy = exports.InitializationPolicy = exports.ConstructorPolicy = exports.KeyBuilder = exports.BasedOnBuilder = exports.FromPackageBuilder = exports.FromBuilder = exports.Installer = exports.InterceptorBuilder = exports.ComponentBuilder = exports.ComponentModel = exports.ContextualLifestyle = exports.SingletonLifestyle = exports.TransientLifestyle = exports.Lifestyle = exports.DependencyResolution = exports.DependencyManager = exports.DependencyModel = exports.DependencyModifier = exports.$container = exports.$$composer = exports.Container = exports.Registration = exports.policy = exports.ComponentPolicy = undefined;
 
 var _desc, _value, _obj;
 
@@ -21,8 +21,6 @@ var _mirukenCallback = require('miruken-callback');
 var _mirukenContext = require('miruken-context');
 
 var _mirukenValidate = require('miruken-validate');
-
-function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) {
     var desc = {};
@@ -53,9 +51,26 @@ function _applyDecoratedDescriptor(target, property, decorators, descriptor, con
     return desc;
 }
 
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
+var policyMetadataKey = Symbol();
+
 var ComponentPolicy = exports.ComponentPolicy = _mirukenCore.Protocol.extend({
     applyPolicy: function applyPolicy(componentModel, policies) {},
     componentCreated: function componentCreated(component, dependencies, composer) {}
+});
+
+var policy = exports.policy = _mirukenCore.Metadata.decorator(policyMetadataKey, function (target, key, descriptor, policies) {
+    policies = (0, _mirukenCore.$flatten)(policies, true);
+    return function (target) {
+        if (policies.length > 0) {
+            var _Metadata$getOrCreate;
+
+            (_Metadata$getOrCreate = _mirukenCore.Metadata.getOrCreateOwn(policyMetadataKey, target, function () {
+                return [];
+            })).push.apply(_Metadata$getOrCreate, _toConsumableArray(policies));
+        }
+    };
 });
 
 var Registration = exports.Registration = _mirukenCore.Protocol.extend({
@@ -762,7 +777,7 @@ var BasedOnBuilder = exports.BasedOnBuilder = _mirukenCore.Base.extend(Registrat
                         var constraint = _step2.value;
 
                         if ((0, _mirukenCore.$isProtocol)(constraint)) {
-                            if (!constraint.adoptedBy(clazz)) {
+                            if (!constraint.isAdoptedBy(clazz)) {
                                 continue;
                             }
                         } else if ((0, _mirukenCore.$isClass)(constraint)) {
@@ -821,7 +836,7 @@ var KeyBuilder = exports.KeyBuilder = _mirukenCore.Base.extend({
             },
             anyService: function anyService() {
                 return selectKeys(function (keys, clazz) {
-                    var services = (0, _mirukenCore.$meta)(clazz).protocols;
+                    var services = (0, _mirukenCore.$protocols)(clazz);
                     if (services.length > 0) {
                         keys.push(services[0]);
                     }
@@ -829,7 +844,7 @@ var KeyBuilder = exports.KeyBuilder = _mirukenCore.Base.extend({
             },
             allServices: function allServices() {
                 return selectKeys(function (keys, clazz) {
-                    return keys.push.apply(keys, _toConsumableArray((0, _mirukenCore.$meta)(clazz).protocols));
+                    return keys.push.apply(keys, _toConsumableArray((0, _mirukenCore.$protocols)(clazz)));
                 });
             },
             mostSpecificService: function mostSpecificService(service) {
@@ -875,7 +890,7 @@ var KeyBuilder = exports.KeyBuilder = _mirukenCore.Base.extend({
 
                                 if (_constraint !== _mirukenCore.Base && _constraint !== Object) {
                                     if ((0, _mirukenCore.$isProtocol)(_constraint)) {
-                                        if (_constraint.adoptedBy(clazz)) {
+                                        if (_constraint.isAdoptedBy(clazz)) {
                                             keys.push(_constraint);
                                             break;
                                         }
@@ -992,7 +1007,7 @@ function _addMatchingProtocols(clazz, preference, matches) {
         for (var _iterator6 = toplevel[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
             var protocol = _step6.value;
 
-            if ((0, _mirukenCore.$meta)(protocol).protocols.indexOf(preference) >= 0) {
+            if ((0, _mirukenCore.$protocols)(protocol).indexOf(preference) >= 0) {
                 matches.push(protocol);
             }
         }
@@ -1013,7 +1028,7 @@ function _addMatchingProtocols(clazz, preference, matches) {
 }
 
 function _toplevelProtocols(type) {
-    var protocols = (0, _mirukenCore.$meta)(type).protocols,
+    var protocols = (0, _mirukenCore.$protocols)(type),
         toplevel = protocols.slice();
     var _iteratorNormalCompletion7 = true;
     var _didIteratorError7 = false;
@@ -1023,7 +1038,7 @@ function _toplevelProtocols(type) {
         for (var _iterator7 = protocols[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
             var protocol = _step7.value;
 
-            var parents = (0, _mirukenCore.$meta)(protocol).protocols;
+            var parents = (0, _mirukenCore.$protocols)(protocol);
             var _iteratorNormalCompletion8 = true;
             var _didIteratorError8 = false;
             var _iteratorError8 = undefined;
@@ -1068,24 +1083,20 @@ function _toplevelProtocols(type) {
     return toplevel;
 }
 
-var InjectionPolicy = exports.InjectionPolicy = _mirukenCore.Base.extend(ComponentPolicy, {
+var ConstructorPolicy = exports.ConstructorPolicy = _mirukenCore.Base.extend(ComponentPolicy, {
     applyPolicy: function applyPolicy(componentModel) {
-        if (componentModel.allDependenciesDefined()) {
+        var implementation = componentModel.implementation;
+
+        if (!implementation || componentModel.allDependenciesDefined()) {
             return;
         }
-        var meta = (0, _mirukenCore.$meta)(componentModel.implementation);
         componentModel.manageDependencies(function (manager) {
-            while (meta) {
-                _mirukenCore.inject.getOwn(meta, "constructor", function (deps) {
-                    if (deps.length > 0) {
-                        manager.merge(deps);
-                    }
-                });
-                if (componentModel.allDependenciesDefined()) {
-                    return;
+            return _mirukenCore.inject.collect(implementation.prototype, "constructor", function (deps) {
+                if (deps.length > 0) {
+                    manager.merge(deps);
+                    return componentModel.allDependenciesDefined();
                 }
-                meta = meta.parent;
-            }
+            });
         });
     }
 });
@@ -1098,7 +1109,21 @@ var InitializationPolicy = exports.InitializationPolicy = _mirukenCore.Base.exte
     }
 });
 
-var DEFAULT_POLICIES = [new InjectionPolicy(), new InitializationPolicy()];
+var PolicyMetadataPolicy = exports.PolicyMetadataPolicy = _mirukenCore.Base.extend(ComponentPolicy, {
+    applyPolicy: function applyPolicy(componentModel, policies) {
+        var implementation = componentModel.implementation;
+        if (implementation) {
+            (function () {
+                var index = policies.length;
+                policy.collect(implementation, function (ps) {
+                    return policies.splice.apply(policies, [index, 0].concat(_toConsumableArray(ps)));
+                });
+            })();
+        }
+    }
+});
+
+var DEFAULT_POLICIES = [new ConstructorPolicy(), new InitializationPolicy(), new PolicyMetadataPolicy()];
 
 var IoContainer = exports.IoContainer = _mirukenCallback.CallbackHandler.extend(Container, {
     constructor: function constructor() {
@@ -1109,35 +1134,15 @@ var IoContainer = exports.IoContainer = _mirukenCallback.CallbackHandler.extend(
                     policies[_key6 - 1] = arguments[_key6];
                 }
 
+                var policyIndex = 0;
                 policies = (0, _mirukenCore.$flatten)(policies, true);
                 policies = policies.length > 0 ? _policies.concat(policies) : _policies;
-                var _iteratorNormalCompletion9 = true;
-                var _didIteratorError9 = false;
-                var _iteratorError9 = undefined;
-
-                try {
-                    for (var _iterator9 = policies[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-                        var policy = _step9.value;
-
-                        if ((0, _mirukenCore.$isFunction)(policy.applyPolicy)) {
-                            policy.applyPolicy(componentModel, policies);
-                        }
-                    }
-                } catch (err) {
-                    _didIteratorError9 = true;
-                    _iteratorError9 = err;
-                } finally {
-                    try {
-                        if (!_iteratorNormalCompletion9 && _iterator9.return) {
-                            _iterator9.return();
-                        }
-                    } finally {
-                        if (_didIteratorError9) {
-                            throw _iteratorError9;
-                        }
+                while (policyIndex < policies.length) {
+                    var _policy = policies[policyIndex++];
+                    if ((0, _mirukenCore.$isFunction)(_policy.applyPolicy)) {
+                        _policy.applyPolicy(componentModel, policies);
                     }
                 }
-
                 var validation = (0, _mirukenValidate.Validator)(_mirukenCallback.$composer).validate(componentModel);
                 if (!validation.valid) {
                     throw new ComponentModelError(componentModel, validation);
@@ -1232,9 +1237,9 @@ function _registerHandler(container, key, type, lifestyle, factory, burden, poli
                     };
 
                     for (var i = index; i < policies.length; ++i) {
-                        var _ret8 = _loop(i);
+                        var _ret9 = _loop(i);
 
-                        if ((typeof _ret8 === 'undefined' ? 'undefined' : _typeof(_ret8)) === "object") return _ret8.v;
+                        if ((typeof _ret9 === 'undefined' ? 'undefined' : _typeof(_ret9)) === "object") return _ret9.v;
                     }
                     return component;
                 }
@@ -1320,17 +1325,17 @@ function _resolveBurden(burden, instant, resolution, composer) {
         };
 
         for (var index = 0; index < resolved.length; ++index) {
-            var _ret10 = _loop3(index);
+            var _ret11 = _loop3(index);
 
-            if (_ret10 === 'continue') continue;
+            if (_ret11 === 'continue') continue;
         }
         dependencies[key] = resolved;
     };
 
     for (var key in burden) {
-        var _ret9 = _loop2(key);
+        var _ret10 = _loop2(key);
 
-        if (_ret9 === 'continue') continue;
+        if (_ret10 === 'continue') continue;
     }
     if (promises.length === 1) {
         return promises[0].then(function () {

@@ -3,19 +3,7 @@
 System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken-validate'], function (_export, _context) {
     "use strict";
 
-    var Protocol, StrictProtocol, Invoking, Disposing, Flags, Base, ArrayManager, Modifier, $createModifier, $use, $lazy, $every, $eval, $child, $optional, $promise, $eq, Abstract, DisposingMixin, $isFunction, Facet, ProxyBuilder, $isSomething, $isProtocol, $isClass, $flatten, $isNothing, $meta, inject, $isPromise, $instant, Resolution, CallbackHandler, $provide, $composer, $NOT_HANDLED, Context, ContextualHelper, validateThat, Validator, _desc, _value, _obj, _typeof, ComponentPolicy, Registration, Container, $$composer, $container, DependencyModifier, DependencyModel, DependencyManager, DependencyResolution, Lifestyle, TransientLifestyle, SingletonLifestyle, ContextualLifestyle, proxyBuilder, ComponentModel, NO_ARGS, ComponentBuilder, InterceptorBuilder, Installer, FromBuilder, FromPackageBuilder, BasedOnBuilder, KeyBuilder, InjectionPolicy, InitializationPolicy, DEFAULT_POLICIES, IoContainer;
-
-    function _toConsumableArray(arr) {
-        if (Array.isArray(arr)) {
-            for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) {
-                arr2[i] = arr[i];
-            }
-
-            return arr2;
-        } else {
-            return Array.from(arr);
-        }
-    }
+    var Protocol, Metadata, $flatten, StrictProtocol, Invoking, Disposing, Flags, Base, ArrayManager, Modifier, $createModifier, $use, $lazy, $every, $eval, $child, $optional, $promise, $eq, Abstract, DisposingMixin, $isFunction, Facet, ProxyBuilder, $isSomething, $isProtocol, $isClass, $isNothing, $protocols, inject, $isPromise, $instant, Resolution, CallbackHandler, $provide, $composer, $NOT_HANDLED, Context, ContextualHelper, validateThat, Validator, _desc, _value, _obj, _typeof, policyMetadataKey, ComponentPolicy, policy, Registration, Container, $$composer, $container, DependencyModifier, DependencyModel, DependencyManager, DependencyResolution, Lifestyle, TransientLifestyle, SingletonLifestyle, ContextualLifestyle, proxyBuilder, ComponentModel, NO_ARGS, ComponentBuilder, InterceptorBuilder, Installer, FromBuilder, FromPackageBuilder, BasedOnBuilder, KeyBuilder, ConstructorPolicy, InitializationPolicy, PolicyMetadataPolicy, DEFAULT_POLICIES, IoContainer;
 
     function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) {
         var desc = {};
@@ -44,6 +32,18 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
         }
 
         return desc;
+    }
+
+    function _toConsumableArray(arr) {
+        if (Array.isArray(arr)) {
+            for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) {
+                arr2[i] = arr[i];
+            }
+
+            return arr2;
+        } else {
+            return Array.from(arr);
+        }
     }
 
     function _makeClassFactory(clazz) {
@@ -98,7 +98,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
             for (var _iterator6 = toplevel[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
                 var protocol = _step6.value;
 
-                if ($meta(protocol).protocols.indexOf(preference) >= 0) {
+                if ($protocols(protocol).indexOf(preference) >= 0) {
                     matches.push(protocol);
                 }
             }
@@ -119,7 +119,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
     }
 
     function _toplevelProtocols(type) {
-        var protocols = $meta(type).protocols,
+        var protocols = $protocols(type),
             toplevel = protocols.slice();
         var _iteratorNormalCompletion7 = true;
         var _didIteratorError7 = false;
@@ -129,7 +129,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
             for (var _iterator7 = protocols[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
                 var protocol = _step7.value;
 
-                var parents = $meta(protocol).protocols;
+                var parents = $protocols(protocol);
                 var _iteratorNormalCompletion8 = true;
                 var _didIteratorError8 = false;
                 var _iteratorError8 = undefined;
@@ -208,9 +208,9 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
                         };
 
                         for (var i = index; i < policies.length; ++i) {
-                            var _ret8 = _loop(i);
+                            var _ret9 = _loop(i);
 
-                            if ((typeof _ret8 === 'undefined' ? 'undefined' : _typeof(_ret8)) === "object") return _ret8.v;
+                            if ((typeof _ret9 === 'undefined' ? 'undefined' : _typeof(_ret9)) === "object") return _ret9.v;
                         }
                         return component;
                     }
@@ -296,17 +296,17 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
             };
 
             for (var index = 0; index < resolved.length; ++index) {
-                var _ret10 = _loop3(index);
+                var _ret11 = _loop3(index);
 
-                if (_ret10 === 'continue') continue;
+                if (_ret11 === 'continue') continue;
             }
             dependencies[key] = resolved;
         };
 
         for (var key in burden) {
-            var _ret9 = _loop2(key);
+            var _ret10 = _loop2(key);
 
-            if (_ret9 === 'continue') continue;
+            if (_ret10 === 'continue') continue;
         }
         if (promises.length === 1) {
             return promises[0].then(function () {
@@ -347,6 +347,8 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
     return {
         setters: [function (_mirukenCore) {
             Protocol = _mirukenCore.Protocol;
+            Metadata = _mirukenCore.Metadata;
+            $flatten = _mirukenCore.$flatten;
             StrictProtocol = _mirukenCore.StrictProtocol;
             Invoking = _mirukenCore.Invoking;
             Disposing = _mirukenCore.Disposing;
@@ -371,9 +373,8 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
             $isSomething = _mirukenCore.$isSomething;
             $isProtocol = _mirukenCore.$isProtocol;
             $isClass = _mirukenCore.$isClass;
-            $flatten = _mirukenCore.$flatten;
             $isNothing = _mirukenCore.$isNothing;
-            $meta = _mirukenCore.$meta;
+            $protocols = _mirukenCore.$protocols;
             inject = _mirukenCore.inject;
             $isPromise = _mirukenCore.$isPromise;
             $instant = _mirukenCore.$instant;
@@ -396,6 +397,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
             } : function (obj) {
                 return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj;
             };
+            policyMetadataKey = Symbol();
 
             _export('ComponentPolicy', ComponentPolicy = Protocol.extend({
                 applyPolicy: function applyPolicy(componentModel, policies) {},
@@ -403,6 +405,21 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
             }));
 
             _export('ComponentPolicy', ComponentPolicy);
+
+            _export('policy', policy = Metadata.decorator(policyMetadataKey, function (target, key, descriptor, policies) {
+                policies = $flatten(policies, true);
+                return function (target) {
+                    if (policies.length > 0) {
+                        var _Metadata$getOrCreate;
+
+                        (_Metadata$getOrCreate = Metadata.getOrCreateOwn(policyMetadataKey, target, function () {
+                            return [];
+                        })).push.apply(_Metadata$getOrCreate, _toConsumableArray(policies));
+                    }
+                };
+            }));
+
+            _export('policy', policy);
 
             _export('Registration', Registration = Protocol.extend({
                 register: function register(container, composer) {}
@@ -1139,7 +1156,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
                                     var constraint = _step2.value;
 
                                     if ($isProtocol(constraint)) {
-                                        if (!constraint.adoptedBy(clazz)) {
+                                        if (!constraint.isAdoptedBy(clazz)) {
                                             continue;
                                         }
                                     } else if ($isClass(constraint)) {
@@ -1200,7 +1217,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
                         },
                         anyService: function anyService() {
                             return selectKeys(function (keys, clazz) {
-                                var services = $meta(clazz).protocols;
+                                var services = $protocols(clazz);
                                 if (services.length > 0) {
                                     keys.push(services[0]);
                                 }
@@ -1208,7 +1225,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
                         },
                         allServices: function allServices() {
                             return selectKeys(function (keys, clazz) {
-                                return keys.push.apply(keys, _toConsumableArray($meta(clazz).protocols));
+                                return keys.push.apply(keys, _toConsumableArray($protocols(clazz)));
                             });
                         },
                         mostSpecificService: function mostSpecificService(service) {
@@ -1254,7 +1271,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
 
                                             if (_constraint !== Base && _constraint !== Object) {
                                                 if ($isProtocol(_constraint)) {
-                                                    if (_constraint.adoptedBy(clazz)) {
+                                                    if (_constraint.isAdoptedBy(clazz)) {
                                                         keys.push(_constraint);
                                                         break;
                                                     }
@@ -1335,29 +1352,25 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
             $classes.fromPackage = function (pkg, names) {
                 return new FromPackageBuilder(pkg, names);
             };
-            _export('InjectionPolicy', InjectionPolicy = Base.extend(ComponentPolicy, {
+            _export('ConstructorPolicy', ConstructorPolicy = Base.extend(ComponentPolicy, {
                 applyPolicy: function applyPolicy(componentModel) {
-                    if (componentModel.allDependenciesDefined()) {
+                    var implementation = componentModel.implementation;
+
+                    if (!implementation || componentModel.allDependenciesDefined()) {
                         return;
                     }
-                    var meta = $meta(componentModel.implementation);
                     componentModel.manageDependencies(function (manager) {
-                        while (meta) {
-                            inject.getOwn(meta, "constructor", function (deps) {
-                                if (deps.length > 0) {
-                                    manager.merge(deps);
-                                }
-                            });
-                            if (componentModel.allDependenciesDefined()) {
-                                return;
+                        return inject.collect(implementation.prototype, "constructor", function (deps) {
+                            if (deps.length > 0) {
+                                manager.merge(deps);
+                                return componentModel.allDependenciesDefined();
                             }
-                            meta = meta.parent;
-                        }
+                        });
                     });
                 }
             }));
 
-            _export('InjectionPolicy', InjectionPolicy);
+            _export('ConstructorPolicy', ConstructorPolicy);
 
             _export('InitializationPolicy', InitializationPolicy = Base.extend(ComponentPolicy, {
                 componentCreated: function componentCreated(component) {
@@ -1369,7 +1382,23 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
 
             _export('InitializationPolicy', InitializationPolicy);
 
-            DEFAULT_POLICIES = [new InjectionPolicy(), new InitializationPolicy()];
+            _export('PolicyMetadataPolicy', PolicyMetadataPolicy = Base.extend(ComponentPolicy, {
+                applyPolicy: function applyPolicy(componentModel, policies) {
+                    var implementation = componentModel.implementation;
+                    if (implementation) {
+                        (function () {
+                            var index = policies.length;
+                            policy.collect(implementation, function (ps) {
+                                return policies.splice.apply(policies, [index, 0].concat(_toConsumableArray(ps)));
+                            });
+                        })();
+                    }
+                }
+            }));
+
+            _export('PolicyMetadataPolicy', PolicyMetadataPolicy);
+
+            DEFAULT_POLICIES = [new ConstructorPolicy(), new InitializationPolicy(), new PolicyMetadataPolicy()];
 
             _export('IoContainer', IoContainer = CallbackHandler.extend(Container, {
                 constructor: function constructor() {
@@ -1380,35 +1409,15 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
                                 policies[_key6 - 1] = arguments[_key6];
                             }
 
+                            var policyIndex = 0;
                             policies = $flatten(policies, true);
                             policies = policies.length > 0 ? _policies.concat(policies) : _policies;
-                            var _iteratorNormalCompletion9 = true;
-                            var _didIteratorError9 = false;
-                            var _iteratorError9 = undefined;
-
-                            try {
-                                for (var _iterator9 = policies[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-                                    var policy = _step9.value;
-
-                                    if ($isFunction(policy.applyPolicy)) {
-                                        policy.applyPolicy(componentModel, policies);
-                                    }
-                                }
-                            } catch (err) {
-                                _didIteratorError9 = true;
-                                _iteratorError9 = err;
-                            } finally {
-                                try {
-                                    if (!_iteratorNormalCompletion9 && _iterator9.return) {
-                                        _iterator9.return();
-                                    }
-                                } finally {
-                                    if (_didIteratorError9) {
-                                        throw _iteratorError9;
-                                    }
+                            while (policyIndex < policies.length) {
+                                var _policy = policies[policyIndex++];
+                                if ($isFunction(_policy.applyPolicy)) {
+                                    _policy.applyPolicy(componentModel, policies);
                                 }
                             }
-
                             var validation = Validator($composer).validate(componentModel);
                             if (!validation.valid) {
                                 throw new ComponentModelError(componentModel, validation);

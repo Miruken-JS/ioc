@@ -10,7 +10,7 @@ import {
 import { Validator } from "miruken-validate";
 
 import { Container } from "./container";
-import { ComponentPolicy } from "./policy";
+import { ComponentPolicy, policy } from "./policy";
 import { ComponentModelError } from "./component";
 import { SingletonLifestyle } from "./lifestyle";
 
@@ -38,8 +38,10 @@ export const ConstructorPolicy = Base.extend(ComponentPolicy, {
         }
         componentModel.manageDependencies(manager => inject.collect(
             implementation.prototype, "constructor", deps => {
-                if (deps.length > 0) { manager.merge(deps); }
-                return componentModel.allDependenciesDefined()
+                if (deps.length > 0) {
+                    manager.merge(deps);
+                    return componentModel.allDependenciesDefined();
+                }
             }));
     }
 });
@@ -58,7 +60,28 @@ export const InitializationPolicy = Base.extend(ComponentPolicy, {
     }        
 });
 
-const DEFAULT_POLICIES = [ new ConstructorPolicy(), new InitializationPolicy() ];
+/**
+ * Expands any Metadata implementation policies to be applied.
+ * @class PolicyMetadataPolicy
+ * @uses ComponentPolicy
+ * @extends Base
+ */
+export const PolicyMetadataPolicy = Base.extend(ComponentPolicy, {
+    applyPolicy(componentModel, policies) {
+        const implementation = componentModel.implementation;
+        if (implementation) {
+            const index = policies.length;
+            policy.collect(implementation, ps => policies.splice(index, 0, ...ps));
+        }
+    }
+});
+
+
+const DEFAULT_POLICIES = [
+    new ConstructorPolicy(),
+    new InitializationPolicy(),
+    new PolicyMetadataPolicy()
+];
 
 /**
  * Default Inversion of Control {{#crossLink "Container"}}{{/crossLink}}.
@@ -72,11 +95,13 @@ export const IoContainer = CallbackHandler.extend(Container, {
         let _policies = DEFAULT_POLICIES;
         this.extend({
             addComponent(componentModel, ...policies) {
+                let policyIndex = 0;                
                 policies = $flatten(policies, true);
                 policies = policies.length > 0
                          ? _policies.concat(policies)
                          : _policies;
-                for (let policy of policies) {
+                while (policyIndex < policies.length) {
+                    const policy = policies[policyIndex++];
                     if ($isFunction(policy.applyPolicy)) {
                         policy.applyPolicy(componentModel, policies);
                     }
