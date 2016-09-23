@@ -32,13 +32,10 @@ export const ComponentPolicy = Protocol.extend({
  * @method policy
  * @param  {Array}  ...policies  -  component policies
  */  
-export const policy = Metadata.decorator(policyMetadataKey,
-    (target, key, descriptor, policies) => {
-        policies = $flatten(policies, true);
-        return target => {
-            if (policies.length > 0) {
-                Metadata.getOrCreateOwn(policyMetadataKey, target, () => [])
-                    .push(...policies);
-            }
-        };
-    });     
+export const policy = Metadata.decorator(policyMetadataKey, (target, policies) => {
+    policies = $flatten(policies, true);
+    if (policies.length > 0) {
+        Metadata.getOrCreateOwn(policyMetadataKey, target, () => [])
+            .push(...policies);
+    };
+});     

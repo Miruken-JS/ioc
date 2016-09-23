@@ -17,7 +17,7 @@ import {
     $$composer, $container
 } from "../src/dependency";
 
-import { ComponentPolicy } from "../src/policy";
+import { ComponentPolicy, policy } from "../src/policy";
 import {
     ComponentModel, ComponentModelError, $component
 } from "../src/component";
@@ -609,10 +609,14 @@ describe("IoContainer", () => {
     });
 
     describe("#addPolicies", () => {
-        it("should apply policies container-wide", done => {
-            const context   = new Context(),
-                  container = Container(context);
+        let context, container;
+        beforeEach(() => {
+            context   = new Context();
+            container = Container(context);
             context.addHandlers(new IoContainer(), new ValidationCallbackHandler());
+        });
+        
+        it("should apply policies container-wide", done => {
             container.addPolicies(new Policy1(), new Policy2(), new Policy3());
             container.register($component(car.V12));
             Promise.resolve(container.resolve(car.Engine)).then(engine => {
@@ -622,9 +626,6 @@ describe("IoContainer", () => {
         });        
 
         it("should apply policies array container-wide", done => {
-            const context   = new Context(),
-                  container = Container(context);
-            context.addHandlers(new IoContainer(), new ValidationCallbackHandler());
             container.addPolicies([new Policy1(), new Policy2(), new Policy3()]);
             container.register($component(car.V12));
             Promise.resolve(container.resolve(car.Engine)).then(engine => {
@@ -634,9 +635,6 @@ describe("IoContainer", () => {
         });
 
         it("should change the default lifestyle to transient", done => {
-            const context   = new Context(),
-                  container = Container(context);
-            context.addHandlers(new IoContainer(), new ValidationCallbackHandler());
             container.addPolicies(new TransientLifestyle());
             container.register($component(car.V12));
             Promise.all([container.resolve(car.Engine), container.resolve(car.Engine)])
@@ -645,6 +643,15 @@ describe("IoContainer", () => {
                     expect(engine2).to.not.equal(engine1);
                     done();
                 });
+        });
+
+        it("should apply policies from metadata", done => {
+            const Component = Base.extend(policy(new Policy1(), new Policy2()));
+            container.register($component(Component));
+            Promise.resolve(container.resolve(Component)).then(component => {
+                expect(component.policies).to.eql(["Policy1", "Policy2"]);
+                done();
+            });
         });        
     });
     

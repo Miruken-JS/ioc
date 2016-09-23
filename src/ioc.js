@@ -96,10 +96,7 @@ export const IoContainer = CallbackHandler.extend(Container, {
         this.extend({
             addComponent(componentModel, ...policies) {
                 let policyIndex = 0;                
-                policies = $flatten(policies, true);
-                policies = policies.length > 0
-                         ? _policies.concat(policies)
-                         : _policies;
+                policies = _policies.concat($flatten(policies, true));
                 while (policyIndex < policies.length) {
                     const policy = policies[policyIndex++];
                     if ($isFunction(policy.applyPolicy)) {
