@@ -1,7 +1,8 @@
 import {
-    Base, Facet, Modifier, inject, $isPromise,
-    $using, $decorated, $promise, $optional,
-    $eq, $use, $lazy, $instant,$eval, $child
+    Base, Facet, Modifier, inject, design,
+    $isPromise, $using, $decorated, $promise,
+    $optional, $eq, $use, $lazy, $instant,
+    $eval, $child
 } from "miruken-core";
 
 import { $provide } from "miruken-callback";
@@ -1147,7 +1148,26 @@ describe("IoContainer", () => {
             expect(() => {
                 car.Engine(context).rev(4000);                
             }).to.throw(Error, /has no method 'rev'/);
-        });       
+        });
+
+        it("should use design metadata to infer dependencies", done => {
+            const DetailShop = Base.extend({
+                @design(car.Car, car.Engine)
+                @inject(undefined, car.RebuiltV12) 
+                constructor(car, engine) {
+                    this.car    = car;
+                    this.engine = engine;
+                }
+            });
+            container.register($component(car.Ferrari), $component(car.V12),
+                               $component(car.RebuiltV12), $component(car.CraigsJunk),
+                               $component(DetailShop));
+            Promise.resolve(container.resolve(DetailShop)).then(shop => {
+                expect(shop.car).to.be.instanceOf(car.Ferrari);
+                expect(shop.engine).to.be.instanceOf(car.RebuiltV12);
+                done();
+            });            
+        });
     });
 
     describe("#resolveAll", () => {

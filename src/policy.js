@@ -1,5 +1,5 @@
 import {
-    Protocol, Metadata, $flatten
+    Protocol, Metadata, $flatten, isDescriptor
 } from "miruken-core";
 
 const policyMetadataKey = Symbol();
@@ -32,10 +32,14 @@ export const ComponentPolicy = Protocol.extend({
  * @method policy
  * @param  {Array}  ...policies  -  component policies
  */  
-export const policy = Metadata.decorator(policyMetadataKey, (target, policies) => {
-    policies = $flatten(policies, true);
-    if (policies.length > 0) {
-        Metadata.getOrCreateOwn(policyMetadataKey, target, () => [])
-            .push(...policies);
-    };
-});     
+export const policy = Metadata.decorator(policyMetadataKey,
+    (target, key, descriptor, policies) => {
+        if (isDescriptor(descriptor)) {
+            throw new SyntaxError("@policy can only be applied to a class");
+        }    
+        policies = $flatten(key, true);
+        if (policies.length > 0) {
+            Metadata.getOrCreateOwn(policyMetadataKey, target, () => [])
+                .push(...policies);
+        };
+    });

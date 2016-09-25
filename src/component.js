@@ -159,7 +159,6 @@ export const ComponentModel = Base.extend({
                 if (arguments.length === 1) {
                     actions = key, key = Facet.Parameters;
                 }
-
                 let   dependencies = _burden[key];
                 const manager      = new DependencyManager(dependencies);
                 if ($isFunction(actions)) {                

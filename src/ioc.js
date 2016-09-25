@@ -1,10 +1,12 @@
 import {
-    Base, inject, $isNothing, $isFunction,
-    $isPromise, $eq, $instant, $flatten
+    Base, inject, design, $isNothing,
+    $isFunction, $isPromise, $eq,
+    $instant, $flatten
 } from "miruken-core";
 
 import {
-    CallbackHandler, $provide, $composer, $NOT_HANDLED
+    CallbackHandler, $provide, $composer,
+    $NOT_HANDLED
 } from "miruken-callback";
 
 import { Validator } from "miruken-validate";
@@ -36,13 +38,28 @@ export const ConstructorPolicy = Base.extend(ComponentPolicy, {
         if (!implementation || componentModel.allDependenciesDefined()) {
             return;
         }
-        componentModel.manageDependencies(manager => inject.collect(
-            implementation.prototype, "constructor", deps => {
-                if (deps.length > 0) {
+        
+        componentModel.manageDependencies(
+            manager => inject.collect(implementation.prototype, "constructor", deps => {
+                if (deps && deps.length > 0) {
                     manager.merge(deps);
                     return componentModel.allDependenciesDefined();
                 }
             }));
+
+        // Fill in any parameter holes from design metadata 
+        if (!componentModel.allDependenciesDefined()) {
+            const params = design.get(implementation.prototype, "constructor");
+            if (params && params.length > 0) {
+                componentModel.manageDependencies(manager => {
+                    for (let i = 0; i < params.length; ++i) {
+                        if (!manager.getIndex(i)) {
+                            manager.setIndex(i, params[i]);
+                        }
+                    }
+                });
+            }
+        }
     }
 });
 
