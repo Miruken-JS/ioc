@@ -466,11 +466,9 @@ var ComponentModel = exports.ComponentModel = _mirukenCore.Base.extend((_obj = {
     }
 }, (_applyDecoratedDescriptor(_obj, 'keyCanBeDetermined', [_mirukenValidate.validateThat], Object.getOwnPropertyDescriptor(_obj, 'keyCanBeDetermined'), _obj), _applyDecoratedDescriptor(_obj, 'factoryCanBeDetermined', [_mirukenValidate.validateThat], Object.getOwnPropertyDescriptor(_obj, 'factoryCanBeDetermined'), _obj)), _obj));
 
-var NO_ARGS = Object.freeze([]);
-
 function _makeClassFactory(clazz) {
     return function (burden) {
-        return Reflect.construct(clazz, burden[_mirukenCore.Facet.Parameters] || NO_ARGS);
+        return Reflect.construct(clazz, burden[_mirukenCore.Facet.Parameters] || _mirukenCore.emptyArray);
     };
 }
 
@@ -1107,7 +1105,11 @@ var ConstructorPolicy = exports.ConstructorPolicy = _mirukenCore.Base.extend(Com
                     componentModel.manageDependencies(function (manager) {
                         for (var i = 0; i < params.length; ++i) {
                             if (!manager.getIndex(i)) {
-                                manager.setIndex(i, params[i]);
+                                var param = params[i];
+                                if (Array.isArray(param)) {
+                                    param = (0, _mirukenCore.$every)(param[0]);
+                                }
+                                manager.setIndex(i, param);
                             }
                         }
                     });

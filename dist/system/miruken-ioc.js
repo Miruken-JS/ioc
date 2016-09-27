@@ -3,7 +3,7 @@
 System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken-validate'], function (_export, _context) {
     "use strict";
 
-    var Protocol, Metadata, $flatten, isDescriptor, StrictProtocol, Invoking, Disposing, Flags, Base, ArrayManager, Modifier, $createModifier, $use, $lazy, $every, $eval, $child, $optional, $promise, $eq, Abstract, DisposingMixin, $isFunction, Facet, ProxyBuilder, $isSomething, $isProtocol, $isClass, $isNothing, $protocols, inject, design, $isPromise, $instant, Resolution, CallbackHandler, $provide, $composer, $NOT_HANDLED, Context, ContextualHelper, validateThat, Validator, _desc, _value, _obj, _typeof, policyMetadataKey, ComponentPolicy, policy, Registration, Container, $$composer, $container, DependencyModifier, DependencyModel, DependencyManager, DependencyResolution, Lifestyle, TransientLifestyle, SingletonLifestyle, ContextualLifestyle, proxyBuilder, ComponentModel, NO_ARGS, ComponentBuilder, InterceptorBuilder, Installer, FromBuilder, FromPackageBuilder, BasedOnBuilder, KeyBuilder, ConstructorPolicy, InitializationPolicy, PolicyMetadataPolicy, DEFAULT_POLICIES, IoContainer;
+    var Protocol, Metadata, $flatten, isDescriptor, StrictProtocol, Invoking, Disposing, Flags, Base, ArrayManager, Modifier, $createModifier, $use, $lazy, $every, $eval, $child, $optional, $promise, $eq, Abstract, DisposingMixin, $isFunction, Facet, ProxyBuilder, emptyArray, $isSomething, $isProtocol, $isClass, $isNothing, $protocols, inject, design, $isPromise, $instant, Resolution, CallbackHandler, $provide, $composer, $NOT_HANDLED, Context, ContextualHelper, validateThat, Validator, _desc, _value, _obj, _typeof, policyMetadataKey, ComponentPolicy, policy, Registration, Container, $$composer, $container, DependencyModifier, DependencyModel, DependencyManager, DependencyResolution, Lifestyle, TransientLifestyle, SingletonLifestyle, ContextualLifestyle, proxyBuilder, ComponentModel, ComponentBuilder, InterceptorBuilder, Installer, FromBuilder, FromPackageBuilder, BasedOnBuilder, KeyBuilder, ConstructorPolicy, InitializationPolicy, PolicyMetadataPolicy, DEFAULT_POLICIES, IoContainer;
 
     function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) {
         var desc = {};
@@ -48,7 +48,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
 
     function _makeClassFactory(clazz) {
         return function (burden) {
-            return Reflect.construct(clazz, burden[Facet.Parameters] || NO_ARGS);
+            return Reflect.construct(clazz, burden[Facet.Parameters] || emptyArray);
         };
     }
 
@@ -371,6 +371,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
             $isFunction = _mirukenCore.$isFunction;
             Facet = _mirukenCore.Facet;
             ProxyBuilder = _mirukenCore.ProxyBuilder;
+            emptyArray = _mirukenCore.emptyArray;
             $isSomething = _mirukenCore.$isSomething;
             $isProtocol = _mirukenCore.$isProtocol;
             $isClass = _mirukenCore.$isClass;
@@ -844,8 +845,6 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
             }, (_applyDecoratedDescriptor(_obj, 'keyCanBeDetermined', [validateThat], Object.getOwnPropertyDescriptor(_obj, 'keyCanBeDetermined'), _obj), _applyDecoratedDescriptor(_obj, 'factoryCanBeDetermined', [validateThat], Object.getOwnPropertyDescriptor(_obj, 'factoryCanBeDetermined'), _obj)), _obj)));
 
             _export('ComponentModel', ComponentModel);
-
-            NO_ARGS = Object.freeze([]);
 
             _export('ComponentBuilder', ComponentBuilder = Base.extend(Registration, {
                 constructor: function constructor(key) {
@@ -1378,7 +1377,11 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
                                 componentModel.manageDependencies(function (manager) {
                                     for (var i = 0; i < params.length; ++i) {
                                         if (!manager.getIndex(i)) {
-                                            manager.setIndex(i, params[i]);
+                                            var param = params[i];
+                                            if (Array.isArray(param)) {
+                                                param = $every(param[0]);
+                                            }
+                                            manager.setIndex(i, param);
                                         }
                                     }
                                 });

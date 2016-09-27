@@ -1166,8 +1166,25 @@ describe("IoContainer", () => {
                 expect(shop.car).to.be.instanceOf(car.Ferrari);
                 expect(shop.engine).to.be.instanceOf(car.RebuiltV12);
                 done();
-            });            
+            });
         });
+
+        it("should map [] design metadata to $every", done => {
+            const CarWash = Base.extend({
+                @design([car.Car])
+                constructor(cars) {
+                    this.cars = cars;
+                }
+            });
+            container.register($component(car.Ferrari).dependsOn($use("LaFerrari")),
+                               $component(car.Bugatti).dependsOn($use("Veyron")),
+                               $component(car.V12), $component(CarWash));
+            Promise.resolve(container.resolve(CarWash)).then(carWash => {
+                expect(carWash.cars.length).to.equal(2);
+                expect(carWash.cars.map(c => c.model)).to.have.members(["LaFerrari", "Veyron"]);
+                done();
+            });            
+        });        
     });
 
     describe("#resolveAll", () => {

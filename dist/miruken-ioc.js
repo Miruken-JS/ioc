@@ -1,4 +1,4 @@
-import {Protocol,Metadata,$flatten,isDescriptor,StrictProtocol,Invoking,Disposing,Flags,Base,ArrayManager,Modifier,$createModifier,$use,$lazy,$every,$eval,$child,$optional,$promise,$eq,Abstract,DisposingMixin,$isFunction,Facet,ProxyBuilder,$isSomething,$isProtocol,$isClass,$isNothing,$protocols,inject,design,$isPromise,$instant} from 'miruken-core';
+import {Protocol,Metadata,$flatten,isDescriptor,StrictProtocol,Invoking,Disposing,Flags,Base,ArrayManager,Modifier,$createModifier,$use,$lazy,$every,$eval,$child,$optional,$promise,$eq,Abstract,DisposingMixin,$isFunction,Facet,ProxyBuilder,emptyArray,$isSomething,$isProtocol,$isClass,$isNothing,$protocols,inject,design,$isPromise,$instant} from 'miruken-core';
 import {Resolution,CallbackHandler,$provide,$composer,$NOT_HANDLED} from 'miruken-callback';
 import {Context,ContextualHelper} from 'miruken-context';
 import {validateThat,Validator} from 'miruken-validate';
@@ -682,10 +682,8 @@ export const ComponentModel = Base.extend({
     }
 });
 
-const NO_ARGS = Object.freeze([]);
-
 function _makeClassFactory(clazz) {
-    return burden => Reflect.construct(clazz, burden[Facet.Parameters] || NO_ARGS);
+    return burden => Reflect.construct(clazz, burden[Facet.Parameters] || emptyArray);
 }
 
 function _makeProxyFactory(types) {
@@ -1366,7 +1364,11 @@ export const ConstructorPolicy = Base.extend(ComponentPolicy, {
                 componentModel.manageDependencies(manager => {
                     for (let i = 0; i < params.length; ++i) {
                         if (!manager.getIndex(i)) {
-                            manager.setIndex(i, params[i]);
+                            let param = params[i];
+                            if (Array.isArray(param)) {
+                                param = $every(param[0]);
+                            }
+                            manager.setIndex(i, param);
                         }
                     }
                 });

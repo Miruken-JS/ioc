@@ -1,7 +1,7 @@
 import {
-    Base, Facet, ProxyBuilder, $isSomething,
-    $isFunction, $isProtocol, $isClass,
-    $flatten, $use
+    Base, Facet, ProxyBuilder, emptyArray,
+    $isSomething, $isFunction, $isProtocol,
+    $isClass, $flatten, $use
 } from "miruken-core";
 
 import {
@@ -196,10 +196,8 @@ export const ComponentModel = Base.extend({
     }
 });
 
-const NO_ARGS = Object.freeze([]);
-
 function _makeClassFactory(clazz) {
-    return burden => Reflect.construct(clazz, burden[Facet.Parameters] || NO_ARGS);
+    return burden => Reflect.construct(clazz, burden[Facet.Parameters] || emptyArray);
 }
 
 function _makeProxyFactory(types) {

@@ -1,7 +1,7 @@
 import {
     Base, inject, design, $isNothing,
     $isFunction, $isPromise, $eq,
-    $instant, $flatten
+    $every, $instant, $flatten
 } from "miruken-core";
 
 import {
@@ -54,7 +54,11 @@ export const ConstructorPolicy = Base.extend(ComponentPolicy, {
                 componentModel.manageDependencies(manager => {
                     for (let i = 0; i < params.length; ++i) {
                         if (!manager.getIndex(i)) {
-                            manager.setIndex(i, params[i]);
+                            let param = params[i];
+                            if (Array.isArray(param)) {
+                                param = $every(param[0]);
+                            }
+                            manager.setIndex(i, param);
                         }
                     }
                 });
