@@ -46,6 +46,19 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
         }
     }
 
+    function DependencyResolutionError(dependency, message) {
+        this.message = message || 'Dependency ' + dependency.formattedDependencyChain() + ' could not be resolved.';
+
+        this.dependency = dependency;
+        if (Error.captureStackTrace) {
+            Error.captureStackTrace(this, this.constructor);
+        } else {
+            Error.call(this);
+        }
+    }
+
+    _export('DependencyResolutionError', DependencyResolutionError);
+
     function _makeClassFactory(clazz) {
         return function (burden) {
             return Reflect.construct(clazz, burden[Facet.Parameters] || emptyArray);
@@ -58,6 +71,34 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
             return Reflect.construct(proxy, [burden]);
         };
     }
+
+    function $component(key) {
+        return new ComponentBuilder(key);
+    }
+
+    _export('$component', $component);
+
+    function ComponentModelError(componentModel, validationResults, message) {
+        this.message = message || "The component model contains one or more errors";
+
+        this.componentModel = componentModel;
+
+        this.validationResults = validationResults;
+
+        if (Error.captureStackTrace) {
+            Error.captureStackTrace(this, this.constructor);
+        } else {
+            Error.call(this);
+        }
+    }
+
+    _export('ComponentModelError', ComponentModelError);
+
+    function $classes(from, names) {
+        return new FromPackageBuilder(from, names);
+    }
+
+    _export('$classes', $classes);
 
     function _unregisterBatch(registrations) {
         return function () {
@@ -398,7 +439,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
             _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
                 return typeof obj;
             } : function (obj) {
-                return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj;
+                return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
             };
             policyMetadataKey = Symbol();
 
@@ -564,19 +605,6 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
             }));
 
             _export('DependencyResolution', DependencyResolution);
-
-            function DependencyResolutionError(dependency, message) {
-                this.message = message || 'Dependency ' + dependency.formattedDependencyChain() + ' could not be resolved.';
-
-                this.dependency = dependency;
-                if (Error.captureStackTrace) {
-                    Error.captureStackTrace(this, this.constructor);
-                } else {
-                    Error.call(this);
-                }
-            }
-
-            _export('DependencyResolutionError', DependencyResolutionError);
 
             DependencyResolutionError.prototype = new Error();
             DependencyResolutionError.prototype.constructor = DependencyResolutionError;
@@ -979,28 +1007,6 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
 
             _export('InterceptorBuilder', InterceptorBuilder);
 
-            function $component(key) {
-                return new ComponentBuilder(key);
-            }
-
-            _export('$component', $component);
-
-            function ComponentModelError(componentModel, validationResults, message) {
-                this.message = message || "The component model contains one or more errors";
-
-                this.componentModel = componentModel;
-
-                this.validationResults = validationResults;
-
-                if (Error.captureStackTrace) {
-                    Error.captureStackTrace(this, this.constructor);
-                } else {
-                    Error.call(this);
-                }
-            }
-
-            _export('ComponentModelError', ComponentModelError);
-
             ComponentModelError.prototype = new Error();
             ComponentModelError.prototype.constructor = ComponentModelError;
 
@@ -1343,12 +1349,6 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
             }));
 
             _export('KeyBuilder', KeyBuilder);
-
-            function $classes(from, names) {
-                return new FromPackageBuilder(from, names);
-            }
-
-            _export('$classes', $classes);
 
             $classes.fromPackage = function (pkg, names) {
                 return new FromPackageBuilder(pkg, names);
