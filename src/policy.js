@@ -1,5 +1,6 @@
 import {
-    Protocol, Metadata, $flatten, isDescriptor
+    Protocol, Metadata, $isFunction,
+    $flatten, isDescriptor
 } from "miruken-core";
 
 const policyMetadataKey = Symbol();
@@ -40,6 +41,10 @@ export const policy = Metadata.decorator(policyMetadataKey,
         policies = $flatten(key, true);
         if (policies.length > 0) {
             Metadata.getOrCreateOwn(policyMetadataKey, target, () => [])
-                .push(...policies);
+                .push(...policies.map(_createOrUsePolicy));
         };
     });
+
+function _createOrUsePolicy(policy) {
+    return $isFunction(policy) ? new policy() : policy;
+}

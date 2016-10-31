@@ -106,7 +106,7 @@ export const SingletonLifestyle = Lifestyle.extend({
 });
 
 /**
- * Manages instances scoped to a {{#crossLink "context.Context"}}{{/crossLink}}.
+ * Manages instances scoped to a {{#crossLink "Context"}}{{/crossLink}}.
  * @class ContextualLifestyle
  * @constructor
  * @extends Lifestyle

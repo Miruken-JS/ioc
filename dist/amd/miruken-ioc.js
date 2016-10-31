@@ -4,7 +4,7 @@ define(['exports', 'miruken-core', 'miruken-callback', 'miruken-context', 'miruk
     Object.defineProperty(exports, "__esModule", {
         value: true
     });
-    exports.IoContainer = exports.PolicyMetadataPolicy = exports.InitializationPolicy = exports.ConstructorPolicy = exports.KeyBuilder = exports.BasedOnBuilder = exports.FromPackageBuilder = exports.FromBuilder = exports.Installer = exports.InterceptorBuilder = exports.ComponentBuilder = exports.ComponentModel = exports.ContextualLifestyle = exports.SingletonLifestyle = exports.TransientLifestyle = exports.Lifestyle = exports.DependencyResolution = exports.DependencyManager = exports.DependencyModel = exports.DependencyModifier = exports.$container = exports.$$composer = exports.Container = exports.Registration = exports.policy = exports.ComponentPolicy = undefined;
+    exports.IoContainer = exports.PolicyMetadataPolicy = exports.PropertyInjectionPolicy = exports.ConstructorPolicy = exports.KeyBuilder = exports.BasedOnBuilder = exports.FromPackageBuilder = exports.FromBuilder = exports.Installer = exports.InterceptorBuilder = exports.ComponentBuilder = exports.ComponentModel = exports.ContextualLifestyle = exports.SingletonLifestyle = exports.TransientLifestyle = exports.Lifestyle = exports.DependencyResolution = exports.DependencyManager = exports.DependencyModel = exports.DependencyModifier = exports.$container = exports.$$composer = exports.Container = exports.Registration = exports.policy = exports.ComponentPolicy = undefined;
     exports.DependencyResolutionError = DependencyResolutionError;
     exports.$component = $component;
     exports.ComponentModelError = ComponentModelError;
@@ -76,9 +76,13 @@ define(['exports', 'miruken-core', 'miruken-callback', 'miruken-context', 'miruk
 
             (_Metadata$getOrCreate = _mirukenCore.Metadata.getOrCreateOwn(policyMetadataKey, target, function () {
                 return [];
-            })).push.apply(_Metadata$getOrCreate, _toConsumableArray(policies));
+            })).push.apply(_Metadata$getOrCreate, _toConsumableArray(policies.map(_createOrUsePolicy)));
         };
     });
+
+    function _createOrUsePolicy(policy) {
+        return (0, _mirukenCore.$isFunction)(policy) ? new policy() : policy;
+    }
 
     var Registration = exports.Registration = _mirukenCore.Protocol.extend({
         register: function register(container, composer) {}
@@ -1087,13 +1091,12 @@ define(['exports', 'miruken-core', 'miruken-callback', 'miruken-context', 'miruk
         return toplevel;
     }
 
-    var ConstructorPolicy = exports.ConstructorPolicy = _mirukenCore.Base.extend(ComponentPolicy, {
+    var ConstructorPolicy = exports.ConstructorPolicy = _mirukenCore.Policy.extend(ComponentPolicy, {
         applyPolicy: function applyPolicy(componentModel) {
             var implementation = componentModel.implementation;
-
-            if (!implementation || componentModel.allDependenciesDefined()) {
+            if (!implementation) {
                 return;
-            }
+            };
 
             componentModel.manageDependencies(function (manager) {
                 return _mirukenCore.inject.collect(implementation.prototype, "constructor", function (deps) {
@@ -1125,15 +1128,57 @@ define(['exports', 'miruken-core', 'miruken-callback', 'miruken-context', 'miruk
         }
     });
 
-    var InitializationPolicy = exports.InitializationPolicy = _mirukenCore.Base.extend(ComponentPolicy, {
-        componentCreated: function componentCreated(component) {
-            if ((0, _mirukenCore.$isFunction)(component.initialize)) {
-                return component.initialize();
-            }
+    var PropertyInjectionPolicy = exports.PropertyInjectionPolicy = _mirukenCore.Policy.extend(ComponentPolicy, {
+        applyPolicy: function applyPolicy(componentModel) {
+            var _this4 = this;
+
+            var implementation = componentModel.implementation;
+            if (!implementation) {
+                return;
+            };
+
+            var prototype = implementation.prototype,
+                props = (0, _mirukenCore.getPropertyDescriptors)(prototype);
+            Reflect.ownKeys(props).forEach(function (key) {
+                var descriptor = props[key];
+                if (!(0, _mirukenCore.$isFunction)(descriptor.value)) {
+                    var _ret9 = function () {
+                        var dependency = _mirukenCore.inject.get(prototype, key);
+                        if ((0, _mirukenCore.$isNothing)(dependency)) {
+                            if (_this4.explicit) {
+                                return {
+                                    v: void 0
+                                };
+                            }
+                            dependency = _mirukenCore.design.get(prototype, key);
+                        }
+                        if (dependency) {
+                            componentModel.manageDependencies('property:' + key, function (manager) {
+                                if (!manager.getIndex(0)) {
+                                    manager.setIndex(0, (0, _mirukenCore.$optional)(dependency));
+                                }
+                            });
+                        }
+                    }();
+
+                    if ((typeof _ret9 === 'undefined' ? 'undefined' : _typeof(_ret9)) === "object") return _ret9.v;
+                }
+            });
+        },
+        componentCreated: function componentCreated(component, dependencies) {
+            Reflect.ownKeys(dependencies).forEach(function (key) {
+                if (key.startsWith && key.startsWith("property:")) {
+                    var dependency = dependencies[key][0];
+                    if ((0, _mirukenCore.$isSomething)(dependency)) {
+                        var property = key.substring(9);
+                        component[property] = dependency;
+                    }
+                }
+            });
         }
     });
 
-    var PolicyMetadataPolicy = exports.PolicyMetadataPolicy = _mirukenCore.Base.extend(ComponentPolicy, {
+    var PolicyMetadataPolicy = exports.PolicyMetadataPolicy = _mirukenCore.Policy.extend(ComponentPolicy, {
         applyPolicy: function applyPolicy(componentModel, policies) {
             var implementation = componentModel.implementation;
             if (implementation) {
@@ -1147,7 +1192,15 @@ define(['exports', 'miruken-core', 'miruken-callback', 'miruken-context', 'miruk
         }
     });
 
-    var DEFAULT_POLICIES = [new ConstructorPolicy(), new InitializationPolicy(), new PolicyMetadataPolicy()];
+    var InitializationPolicy = new (_mirukenCore.Policy.extend(ComponentPolicy, {
+        componentCreated: function componentCreated(component) {
+            if ((0, _mirukenCore.$isFunction)(component.initialize)) {
+                return component.initialize();
+            }
+        }
+    }))();
+
+    var DEFAULT_POLICIES = [new ConstructorPolicy(), new PolicyMetadataPolicy()];
 
     var IoContainer = exports.IoContainer = _mirukenCallback.CallbackHandler.extend(Container, {
         constructor: function constructor() {
@@ -1185,14 +1238,14 @@ define(['exports', 'miruken-core', 'miruken-callback', 'miruken-context', 'miruk
             });
         },
         register: function register() {
-            var _this4 = this;
+            var _this5 = this;
 
             for (var _len7 = arguments.length, registrations = Array(_len7), _key8 = 0; _key8 < _len7; _key8++) {
                 registrations[_key8] = arguments[_key8];
             }
 
             return (0, _mirukenCore.$flatten)(registrations, true).map(function (registration) {
-                return registration.register(_this4, _mirukenCallback.$composer);
+                return registration.register(_this5, _mirukenCallback.$composer);
             });
         },
         registerHandler: function registerHandler(componentModel, policies) {
@@ -1234,6 +1287,7 @@ define(['exports', 'miruken-core', 'miruken-callback', 'miruken-context', 'miruk
             if (!resolution.claim(handler, type)) {
                 return _mirukenCallback.$NOT_HANDLED;
             }
+            policies = policies.concat(InitializationPolicy);
             return lifestyle.resolve(function (configure) {
                 var instant = _mirukenCore.$instant.test(resolution.key),
                     dependencies = _resolveBurden(burden, instant, resolution, composer);
@@ -1260,9 +1314,9 @@ define(['exports', 'miruken-core', 'miruken-callback', 'miruken-context', 'miruk
                         };
 
                         for (var i = index; i < policies.length; ++i) {
-                            var _ret10 = _loop(i);
+                            var _ret11 = _loop(i);
 
-                            if ((typeof _ret10 === 'undefined' ? 'undefined' : _typeof(_ret10)) === "object") return _ret10.v;
+                            if ((typeof _ret11 === 'undefined' ? 'undefined' : _typeof(_ret11)) === "object") return _ret11.v;
                         }
                         return component;
                     }
@@ -1348,17 +1402,17 @@ define(['exports', 'miruken-core', 'miruken-callback', 'miruken-context', 'miruk
             };
 
             for (var index = 0; index < resolved.length; ++index) {
-                var _ret12 = _loop3(index);
+                var _ret13 = _loop3(index);
 
-                if (_ret12 === 'continue') continue;
+                if (_ret13 === 'continue') continue;
             }
             dependencies[key] = resolved;
         };
 
         for (var key in burden) {
-            var _ret11 = _loop2(key);
+            var _ret12 = _loop2(key);
 
-            if (_ret11 === 'continue') continue;
+            if (_ret12 === 'continue') continue;
         }
         if (promises.length === 1) {
             return promises[0].then(function () {

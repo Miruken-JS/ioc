@@ -1,7 +1,8 @@
 import {
-    Base, inject, design, $isNothing,
-    $isFunction, $isPromise, $eq,
-    $every, $instant, $flatten
+    Base, Policy, inject, design, getPropertyDescriptors,
+    $isNothing, $isSomething, $isFunction,
+    $isPromise, $eq, $optional, $every,
+    $instant, $flatten
 } from "miruken-core";
 
 import {
@@ -26,18 +27,16 @@ import {
  * Collects constructor dependencies to be injected.
  * @class ConstructorPolicy
  * @uses ComponentPolicy
- * @extends Base
+ * @extends Policy
  */
-export const ConstructorPolicy = Base.extend(ComponentPolicy, {
+export const ConstructorPolicy = Policy.extend(ComponentPolicy, {
     applyPolicy(componentModel) {
         const implementation = componentModel.implementation;
+        if (!implementation) { return };
         
         // Dependencies will be merged from inject metadata
         // starting from most derived unitl no more remain or the
         // current definition is fully specified (no holes).
-        if (!implementation || componentModel.allDependenciesDefined()) {
-            return;
-        }
         
         componentModel.manageDependencies(
             manager => inject.collect(implementation.prototype, "constructor", deps => {
@@ -68,26 +67,56 @@ export const ConstructorPolicy = Base.extend(ComponentPolicy, {
 });
 
 /**
- * Executes the {{#crossLink "Initializing"}}{{/crossLink}} protocol.
- * @class InitializationPolicy
+ * Collects optional property dependencies to be injected.
+ * @class PropertyInjectionPolicy
  * @uses ComponentPolicy
- * @extends Base
+ * @extends Policy
  */
-export const InitializationPolicy = Base.extend(ComponentPolicy, {
-    componentCreated(component) {
-        if ($isFunction(component.initialize)) {
-            return component.initialize();
-        }
-    }        
+export const PropertyInjectionPolicy = Policy.extend(ComponentPolicy, {
+    applyPolicy(componentModel) {
+        const implementation = componentModel.implementation;
+        if (!implementation) { return };
+
+        const prototype = implementation.prototype,
+              props     = getPropertyDescriptors(prototype);
+        Reflect.ownKeys(props).forEach(key => {
+            const descriptor = props[key];
+            if (!$isFunction(descriptor.value)) {
+                let dependency = inject.get(prototype, key);
+                if ($isNothing(dependency)) {
+                    if (this.explicit) { return; }
+                    dependency = design.get(prototype, key);
+                }
+                if (dependency) {
+                    componentModel.manageDependencies(`property:${key}`, manager => {
+                        if (!manager.getIndex(0)) {                        
+                            manager.setIndex(0, $optional(dependency));
+                        }
+                    });
+                }
+            }
+        });
+    },
+    componentCreated(component, dependencies) {
+        Reflect.ownKeys(dependencies).forEach(key => {
+            if (key.startsWith && key.startsWith("property:")) {
+                const dependency = dependencies[key][0];
+                if ($isSomething(dependency)) {
+                    const property = key.substring(9);
+                    component[property] = dependency;
+                }
+            }
+        });
+    }
 });
 
 /**
  * Expands any Metadata implementation policies to be applied.
  * @class PolicyMetadataPolicy
  * @uses ComponentPolicy
- * @extends Base
+ * @extends Policy
  */
-export const PolicyMetadataPolicy = Base.extend(ComponentPolicy, {
+export const PolicyMetadataPolicy = Policy.extend(ComponentPolicy, {
     applyPolicy(componentModel, policies) {
         const implementation = componentModel.implementation;
         if (implementation) {
@@ -97,12 +126,16 @@ export const PolicyMetadataPolicy = Base.extend(ComponentPolicy, {
     }
 });
 
+const InitializationPolicy = new (Policy.extend(ComponentPolicy, {
+    componentCreated(component) {
+        if ($isFunction(component.initialize)) {
+            return component.initialize();
+        }
+    }        
+}));
 
-const DEFAULT_POLICIES = [
-    new ConstructorPolicy(),
-    new InitializationPolicy(),
-    new PolicyMetadataPolicy()
-];
+
+const DEFAULT_POLICIES = [ new ConstructorPolicy(), new PolicyMetadataPolicy() ];
 
 /**
  * Default Inversion of Control {{#crossLink "Container"}}{{/crossLink}}.
@@ -181,6 +214,7 @@ function _registerHandler(container, key, type, lifestyle, factory, burden, poli
         if (!resolution.claim(handler, type)) {  // cycle detected
             return $NOT_HANDLED;
         }
+        policies = policies.concat(InitializationPolicy);
         return lifestyle.resolve(configure => {
             const instant      = $instant.test(resolution.key),
                   dependencies = _resolveBurden(burden, instant, resolution, composer);

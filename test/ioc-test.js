@@ -25,7 +25,9 @@ import {
 
 import { TransientLifestyle } from "../src/lifestyle";
 import { Container } from "../src/container";
-import { IoContainer } from "../src/ioc";
+import {
+    IoContainer, PropertyInjectionPolicy
+} from "../src/ioc";
 
 import { expect } from "chai";
 
@@ -219,6 +221,17 @@ describe("ComponentModel", () => {
             });
         });
 
+        it("should augment component dependences", done => {
+            container.register($component(car.Ferrari).dependsOn($use("LaFerrari")),
+                               $component(car.V12));
+            Promise.resolve(container.resolve(car.Car)).then(c => {
+                expect(c).to.be.instanceOf(car.Ferrari);
+                expect(c.engine).to.be.instanceOf(car.V12);                
+                done();
+            });
+        });
+        
+        
         it("should configure component dependencies with factory", done => {
             container.register(
                 $component(car.Engine).dependsOn($use(1000), $use(7.7))
@@ -647,7 +660,7 @@ describe("IoContainer", () => {
         });
 
         it("should apply policies from metadata", done => {
-            const Component = Base.extend(policy(new Policy1(), new Policy2()));
+            const Component = Base.extend(policy(Policy1, Policy2));
             container.register($component(Component));
             Promise.resolve(container.resolve(Component)).then(component => {
                 expect(component.policies).to.eql(["Policy1", "Policy2"]);
@@ -772,7 +785,7 @@ describe("IoContainer", () => {
         });
 
         it("should resolve instance with optional missing dependencies", done => {
-            container.register($component(car.Ferrari).dependsOn($optional(car.Engine)));
+            container.register($component(car.Ferrari).dependsOn([, $optional(car.Engine)]));
             Promise.resolve(container.resolve(car.Car)).then(c => {
                 expect(c).to.be.instanceOf(car.Ferrari);
                 expect(c.engine).to.be.undefined;
@@ -1072,7 +1085,7 @@ describe("IoContainer", () => {
                 })
             );
         });
-
+        
         it("should resolve collection dependencies", done => {
             container.register($component(car.Ferrari).dependsOn($use("LaFerrari")),
                                $component(car.Bugatti).dependsOn($use("Veyron")),
@@ -1183,8 +1196,82 @@ describe("IoContainer", () => {
                 expect(carWash.cars.length).to.equal(2);
                 expect(carWash.cars.map(c => c.model)).to.have.members(["LaFerrari", "Veyron"]);
                 done();
+            });
+        });
+ 
+        describe("PropertyInjectionPolicy", () => {
+            const CarParts = Base.extend(policy(PropertyInjectionPolicy), {
+                      @inject($optional(car.Auction))
+                      constructor(auction) {
+                          this.auction = auction;
+                      },
+                      initialize() {
+                          this.initialized = !!this.engine;
+                      },
+                
+                      @inject(car.Engine)
+                      engine: undefined,
+
+                      @design(car.Car)
+                      get car() { return this._car; },
+                      set car(value) { this._car = value; }
+                  }),
+                  Garage = Base.extend(
+                      policy(PropertyInjectionPolicy({explicit: true})), {
+                      @inject(car.Supercharger)
+                      supercharger: undefined,
+                          
+                      @design(car.Junkyard)
+                      junkyard: undefined
+                  });
+
+            it("should ignore unsatisfied optional property dependencies", done => {
+                container.register($component(CarParts), $component(car.Auction));
+                Promise.resolve(container.resolve(CarParts)).then(carParts => {
+                    expect(carParts.engine).to.be.undefined;
+                    expect(carParts.car).to.be.undefined;                    
+                    done();
+                });
+            });
+            
+            it("should satisfy optional property dependencies using @inject", done => {
+                container.register($component(car.V12), $component(CarParts));
+                Promise.resolve(container.resolve(CarParts)).then(carParts => {
+                    expect(carParts.engine).to.be.instanceOf(car.V12);
+                    done();
+                });
+            });
+
+            it("should satisfy optional property dependencies using @design", done => {
+                container.register($component(car.Ferrari).dependsOn($use("LaFerrari")),
+                                   $component(car.V12), $component(CarParts));
+                Promise.resolve(container.resolve(CarParts)).then(carParts => {
+                    expect(carParts.engine).to.be.instanceOf(car.V12);
+                    expect(carParts.car).to.be.instanceOf(car.Ferrari);
+                    expect(carParts.engine).to.equal(carParts.car.engine);
+                    done();
+                });
+            });
+
+            it("should ignore implicit optional property dependencies", done => {
+                container.register($component(car.V12), $component(car.CraigsJunk),
+                                   $component(car.Supercharger).dependsOn([,$use(.5)]),
+                                   $component(Garage));
+                Promise.resolve(container.resolve(Garage)).then(garage => {
+                    expect(garage.supercharger).to.be.instanceOf(car.Supercharger);
+                    expect(garage.junkyard).to.be.undefined;
+                    done();
+                });                      
+            });
+
+            it("should call initialize after all properties injected", done => {
+                container.register($component(car.V12), $component(CarParts));
+                Promise.resolve(container.resolve(CarParts)).then(carParts => {
+                    expect(carParts.initialized).to.be.true;
+                    done();
+                });
             });            
-        });        
+        });
     });
 
     describe("#resolveAll", () => {
