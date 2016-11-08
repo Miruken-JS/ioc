@@ -1167,7 +1167,7 @@ define(['exports', 'miruken-core', 'miruken-callback', 'miruken-context', 'miruk
         },
         componentCreated: function componentCreated(component, dependencies) {
             Reflect.ownKeys(dependencies).forEach(function (key) {
-                if (key.startsWith && key.startsWith("property:")) {
+                if ((0, _mirukenCore.$isFunction)(key.startsWith) && key.startsWith("property:")) {
                     var dependency = dependencies[key][0];
                     if ((0, _mirukenCore.$isSomething)(dependency)) {
                         var property = key.substring(9);

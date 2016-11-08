@@ -9,7 +9,7 @@ import { Resolution } from "miruken-callback";
 
 /**
  * Symbol for injecting composer dependency.<br/>
- * See {{#crossLink "CallbackHandler"}}{{/crossLink}}
+ * See {{#crossLink "Handler"}}{{/crossLink}}
  * @property {Object} $$composer
  */    
 export const $$composer = Symbol();

@@ -11,8 +11,8 @@ export const Registration = Protocol.extend({
     /**
      * Encapsulates the regisration of components in a container.
      * @method register
-     * @param  {Container}       container  -  container
-     * @param  {CallbackHandler} composer   -  composition handler
+     * @param  {Container}  container  -  container
+     * @param  {Handler}    composer   -  composition handler
      * @return {Function} function to unregister components.
      */
     register(container, composer) {}

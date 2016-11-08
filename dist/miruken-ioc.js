@@ -1412,7 +1412,7 @@ export const PropertyInjectionPolicy = Policy.extend(ComponentPolicy, {
     },
     componentCreated(component, dependencies) {
         Reflect.ownKeys(dependencies).forEach(key => {
-            if (key.startsWith && key.startsWith("property:")) {
+            if ($isFunction(key.startsWith) && key.startsWith("property:")) {
                 const dependency = dependencies[key][0];
                 if ($isSomething(dependency)) {
                     const property = key.substring(9);

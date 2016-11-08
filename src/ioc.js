@@ -6,8 +6,7 @@ import {
 } from "miruken-core";
 
 import {
-    CallbackHandler, $provide, $composer,
-    $NOT_HANDLED
+    Handler, $provide, $composer, $unhandled
 } from "miruken-callback";
 
 import { Validator } from "miruken-validate";
@@ -99,7 +98,7 @@ export const PropertyInjectionPolicy = Policy.extend(ComponentPolicy, {
     },
     componentCreated(component, dependencies) {
         Reflect.ownKeys(dependencies).forEach(key => {
-            if (key.startsWith && key.startsWith("property:")) {
+            if ($isFunction(key.startsWith) && key.startsWith("property:")) {
                 const dependency = dependencies[key][0];
                 if ($isSomething(dependency)) {
                     const property = key.substring(9);
@@ -141,10 +140,10 @@ const DEFAULT_POLICIES = [ new ConstructorPolicy(), new PolicyMetadataPolicy() ]
  * Default Inversion of Control {{#crossLink "Container"}}{{/crossLink}}.
  * @class IoContainer
  * @constructor
- * @extends CallbackHandler
+ * @extends Handler
  * @uses Container
  */
-export const IoContainer = CallbackHandler.extend(Container, {
+export const IoContainer = Handler.extend(Container, {
     constructor() {
         let _policies = DEFAULT_POLICIES;
         this.extend({
@@ -212,7 +211,7 @@ function _registerHandler(container, key, type, lifestyle, factory, burden, poli
             resolution = new DependencyResolution(resolution.key);
         }
         if (!resolution.claim(handler, type)) {  // cycle detected
-            return $NOT_HANDLED;
+            return $unhandled;
         }
         policies = policies.concat(InitializationPolicy);
         return lifestyle.resolve(configure => {

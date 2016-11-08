@@ -1438,7 +1438,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
                 },
                 componentCreated: function componentCreated(component, dependencies) {
                     Reflect.ownKeys(dependencies).forEach(function (key) {
-                        if (key.startsWith && key.startsWith("property:")) {
+                        if ($isFunction(key.startsWith) && key.startsWith("property:")) {
                             var dependency = dependencies[key][0];
                             if ($isSomething(dependency)) {
                                 var property = key.substring(9);
