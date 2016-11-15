@@ -229,18 +229,23 @@ define(['exports', 'miruken-core', 'miruken-callback', 'miruken-context', 'miruk
             var _this = this;
 
             if (instance && (0, _mirukenCore.$isFunction)(instance.dispose)) {
-                (function () {
+                var _ret = function () {
                     var lifestyle = _this;
-                    instance.extend({
-                        dispose: function dispose(disposing) {
-                            if (disposing || lifestyle.disposeInstance(instance, true)) {
-                                this.base();
-                                this.dispose = this.base;
+                    return {
+                        v: (0, _mirukenCore.$decorate)(instance, {
+                            dispose: function dispose(disposing) {
+                                if (disposing || lifestyle.disposeInstance(this, true)) {
+                                    this.base();
+                                    Reflect.deleteProperty(this, "dispose");
+                                }
                             }
-                        }
-                    });
-                })();
+                        })
+                    };
+                }();
+
+                if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
             }
+            return instance;
         },
         disposeInstance: function disposeInstance(instance, disposing) {
             if (!disposing && instance && (0, _mirukenCore.$isFunction)(instance.dispose)) {
@@ -266,12 +271,16 @@ define(['exports', 'miruken-core', 'miruken-callback', 'miruken-context', 'miruk
                 resolve: function resolve(factory) {
                     var _this2 = this;
 
-                    return instance ? instance : factory(function (object) {
-                        if (!instance && object) {
-                            instance = object;
-                            _this2.trackInstance(instance);
-                        }
-                    });
+                    if (instance == null) {
+                        return factory(function (object) {
+                            if (!instance && object) {
+                                instance = _this2.trackInstance(object);
+                                return instance;
+                            }
+                        });
+                    }
+                    instance = this.trackInstance(instance);
+                    return instance;
                 },
                 disposeInstance: function disposeInstance(object, disposing) {
                     if (!disposing && object === instance) {
@@ -304,15 +313,14 @@ define(['exports', 'miruken-core', 'miruken-callback', 'miruken-context', 'miruk
                             return {
                                 v: instance ? instance : factory(function (object) {
                                     if (object && !_cache[id]) {
-                                        _cache[id] = instance = object;
-                                        _this3.trackInstance(instance);
-                                        _mirukenContext.ContextualHelper.bindContext(instance, context);
+                                        instance = _this3.trackInstance(object);
+                                        _cache[id] = instance = _this3.trackContext(object, instance, context);
+                                        _mirukenContext.ContextualHelper.bindContext(object, context, true);
                                         context.onEnded(function () {
-                                            instance.context = null;
-                                            _this3.disposeInstance(instance);
-                                            delete _cache[id];
+                                            return instance.context = null;
                                         });
                                     }
+                                    return instance;
                                 })
                             };
                         }();
@@ -320,12 +328,33 @@ define(['exports', 'miruken-core', 'miruken-callback', 'miruken-context', 'miruk
                         if ((typeof _ret2 === 'undefined' ? 'undefined' : _typeof(_ret2)) === "object") return _ret2.v;
                     }
                 },
+                trackContext: function trackContext(object, instance, context) {
+                    var property = (0, _mirukenCore.getPropertyDescriptors)(instance, "context");
+                    if (!(property && property.set)) {
+                        if (object === instance) {
+                            instance = (0, _mirukenCore.$decorate)(object, _mirukenContext.ContextualMixin);
+                        } else {
+                            instance.extend(_mirukenContext.ContextualMixin);
+                        }
+                    }
+                    var lifestyle = this;
+                    return instance.extend({
+                        set context(value) {
+                            if (value == null) {
+                                this.base(null);
+                                lifestyle.disposeInstance(instance);
+                            } else if (value !== context) {
+                                throw new Error("Container managed instances cannot change context");
+                            }
+                        }
+                    });
+                },
                 disposeInstance: function disposeInstance(instance, disposing) {
                     if (!disposing) {
                         for (var contextId in _cache) {
                             if (_cache[contextId] === instance) {
                                 this.base(instance, disposing);
-                                delete _cache[contextId];
+                                Reflect.deleteProperty(_cache, contextId);
                                 return true;
                             }
                         }
@@ -1202,7 +1231,7 @@ define(['exports', 'miruken-core', 'miruken-callback', 'miruken-context', 'miruk
 
     var DEFAULT_POLICIES = [new ConstructorPolicy(), new PolicyMetadataPolicy()];
 
-    var IoContainer = exports.IoContainer = _mirukenCallback.CallbackHandler.extend(Container, {
+    var IoContainer = exports.IoContainer = _mirukenCallback.Handler.extend(Container, {
         constructor: function constructor() {
             var _policies = DEFAULT_POLICIES;
             this.extend({
@@ -1285,7 +1314,7 @@ define(['exports', 'miruken-core', 'miruken-callback', 'miruken-context', 'miruk
                 resolution = new DependencyResolution(resolution.key);
             }
             if (!resolution.claim(handler, type)) {
-                return _mirukenCallback.$NOT_HANDLED;
+                return _mirukenCallback.$unhandled;
             }
             policies = policies.concat(InitializationPolicy);
             return lifestyle.resolve(function (configure) {
@@ -1295,7 +1324,7 @@ define(['exports', 'miruken-core', 'miruken-callback', 'miruken-context', 'miruk
                 function createComponent(dependencies) {
                     var component = factory.call(composer, dependencies);
                     if ((0, _mirukenCore.$isFunction)(configure)) {
-                        configure(component, dependencies);
+                        component = configure(component, dependencies) || component;
                     }
                     return applyPolicies(0);
                     function applyPolicies(index) {

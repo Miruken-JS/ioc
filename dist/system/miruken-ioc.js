@@ -3,7 +3,7 @@
 System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken-validate'], function (_export, _context) {
     "use strict";
 
-    var Protocol, Metadata, $isFunction, $flatten, isDescriptor, StrictProtocol, Invoking, Disposing, Flags, Base, ArrayManager, Modifier, $createModifier, $use, $lazy, $every, $eval, $child, $optional, $promise, $eq, Abstract, DisposingMixin, Facet, ProxyBuilder, emptyArray, $isSomething, $isProtocol, $isClass, $isNothing, $protocols, Policy, inject, design, getPropertyDescriptors, $isPromise, $instant, Resolution, CallbackHandler, $provide, $composer, $NOT_HANDLED, Context, ContextualHelper, validateThat, Validator, _desc, _value, _obj, _typeof, policyMetadataKey, ComponentPolicy, policy, Registration, Container, $$composer, $container, DependencyModifier, DependencyModel, DependencyManager, DependencyResolution, Lifestyle, TransientLifestyle, SingletonLifestyle, ContextualLifestyle, proxyBuilder, ComponentModel, ComponentBuilder, InterceptorBuilder, Installer, FromBuilder, FromPackageBuilder, BasedOnBuilder, KeyBuilder, ConstructorPolicy, PropertyInjectionPolicy, PolicyMetadataPolicy, InitializationPolicy, DEFAULT_POLICIES, IoContainer;
+    var Protocol, Metadata, $isFunction, $flatten, isDescriptor, StrictProtocol, Invoking, Disposing, Flags, Base, ArrayManager, Modifier, $createModifier, $use, $lazy, $every, $eval, $child, $optional, $promise, $eq, Abstract, DisposingMixin, $decorate, getPropertyDescriptors, Facet, ProxyBuilder, emptyArray, $isSomething, $isProtocol, $isClass, $isNothing, $protocols, Policy, inject, design, $isPromise, $instant, Resolution, Handler, $provide, $composer, $unhandled, Context, ContextualHelper, ContextualMixin, validateThat, Validator, _desc, _value, _obj, _typeof, policyMetadataKey, ComponentPolicy, policy, Registration, Container, $$composer, $container, DependencyModifier, DependencyModel, DependencyManager, DependencyResolution, Lifestyle, TransientLifestyle, SingletonLifestyle, ContextualLifestyle, proxyBuilder, ComponentModel, ComponentBuilder, InterceptorBuilder, Installer, FromBuilder, FromPackageBuilder, BasedOnBuilder, KeyBuilder, ConstructorPolicy, PropertyInjectionPolicy, PolicyMetadataPolicy, InitializationPolicy, DEFAULT_POLICIES, IoContainer;
 
     function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) {
         var desc = {};
@@ -225,7 +225,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
                 resolution = new DependencyResolution(resolution.key);
             }
             if (!resolution.claim(handler, type)) {
-                return $NOT_HANDLED;
+                return $unhandled;
             }
             policies = policies.concat(InitializationPolicy);
             return lifestyle.resolve(function (configure) {
@@ -235,7 +235,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
                 function createComponent(dependencies) {
                     var component = factory.call(composer, dependencies);
                     if ($isFunction(configure)) {
-                        configure(component, dependencies);
+                        component = configure(component, dependencies) || component;
                     }
                     return applyPolicies(0);
                     function applyPolicies(index) {
@@ -415,6 +415,8 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
             $eq = _mirukenCore.$eq;
             Abstract = _mirukenCore.Abstract;
             DisposingMixin = _mirukenCore.DisposingMixin;
+            $decorate = _mirukenCore.$decorate;
+            getPropertyDescriptors = _mirukenCore.getPropertyDescriptors;
             Facet = _mirukenCore.Facet;
             ProxyBuilder = _mirukenCore.ProxyBuilder;
             emptyArray = _mirukenCore.emptyArray;
@@ -426,18 +428,18 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
             Policy = _mirukenCore.Policy;
             inject = _mirukenCore.inject;
             design = _mirukenCore.design;
-            getPropertyDescriptors = _mirukenCore.getPropertyDescriptors;
             $isPromise = _mirukenCore.$isPromise;
             $instant = _mirukenCore.$instant;
         }, function (_mirukenCallback) {
             Resolution = _mirukenCallback.Resolution;
-            CallbackHandler = _mirukenCallback.CallbackHandler;
+            Handler = _mirukenCallback.Handler;
             $provide = _mirukenCallback.$provide;
             $composer = _mirukenCallback.$composer;
-            $NOT_HANDLED = _mirukenCallback.$NOT_HANDLED;
+            $unhandled = _mirukenCallback.$unhandled;
         }, function (_mirukenContext) {
             Context = _mirukenContext.Context;
             ContextualHelper = _mirukenContext.ContextualHelper;
+            ContextualMixin = _mirukenContext.ContextualMixin;
         }, function (_mirukenValidate) {
             validateThat = _mirukenValidate.validateThat;
             Validator = _mirukenValidate.Validator;
@@ -624,18 +626,23 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
                     var _this = this;
 
                     if (instance && $isFunction(instance.dispose)) {
-                        (function () {
+                        var _ret = function () {
                             var lifestyle = _this;
-                            instance.extend({
-                                dispose: function dispose(disposing) {
-                                    if (disposing || lifestyle.disposeInstance(instance, true)) {
-                                        this.base();
-                                        this.dispose = this.base;
+                            return {
+                                v: $decorate(instance, {
+                                    dispose: function dispose(disposing) {
+                                        if (disposing || lifestyle.disposeInstance(this, true)) {
+                                            this.base();
+                                            Reflect.deleteProperty(this, "dispose");
+                                        }
                                     }
-                                }
-                            });
-                        })();
+                                })
+                            };
+                        }();
+
+                        if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
                     }
+                    return instance;
                 },
                 disposeInstance: function disposeInstance(instance, disposing) {
                     if (!disposing && instance && $isFunction(instance.dispose)) {
@@ -665,12 +672,16 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
                         resolve: function resolve(factory) {
                             var _this2 = this;
 
-                            return instance ? instance : factory(function (object) {
-                                if (!instance && object) {
-                                    instance = object;
-                                    _this2.trackInstance(instance);
-                                }
-                            });
+                            if (instance == null) {
+                                return factory(function (object) {
+                                    if (!instance && object) {
+                                        instance = _this2.trackInstance(object);
+                                        return instance;
+                                    }
+                                });
+                            }
+                            instance = this.trackInstance(instance);
+                            return instance;
                         },
                         disposeInstance: function disposeInstance(object, disposing) {
                             if (!disposing && object === instance) {
@@ -705,15 +716,14 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
                                     return {
                                         v: instance ? instance : factory(function (object) {
                                             if (object && !_cache[id]) {
-                                                _cache[id] = instance = object;
-                                                _this3.trackInstance(instance);
-                                                ContextualHelper.bindContext(instance, context);
+                                                instance = _this3.trackInstance(object);
+                                                _cache[id] = instance = _this3.trackContext(object, instance, context);
+                                                ContextualHelper.bindContext(object, context, true);
                                                 context.onEnded(function () {
-                                                    instance.context = null;
-                                                    _this3.disposeInstance(instance);
-                                                    delete _cache[id];
+                                                    return instance.context = null;
                                                 });
                                             }
+                                            return instance;
                                         })
                                     };
                                 }();
@@ -721,12 +731,33 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
                                 if ((typeof _ret2 === 'undefined' ? 'undefined' : _typeof(_ret2)) === "object") return _ret2.v;
                             }
                         },
+                        trackContext: function trackContext(object, instance, context) {
+                            var property = getPropertyDescriptors(instance, "context");
+                            if (!(property && property.set)) {
+                                if (object === instance) {
+                                    instance = $decorate(object, ContextualMixin);
+                                } else {
+                                    instance.extend(ContextualMixin);
+                                }
+                            }
+                            var lifestyle = this;
+                            return instance.extend({
+                                set context(value) {
+                                    if (value == null) {
+                                        this.base(null);
+                                        lifestyle.disposeInstance(instance);
+                                    } else if (value !== context) {
+                                        throw new Error("Container managed instances cannot change context");
+                                    }
+                                }
+                            });
+                        },
                         disposeInstance: function disposeInstance(instance, disposing) {
                             if (!disposing) {
                                 for (var contextId in _cache) {
                                     if (_cache[contextId] === instance) {
                                         this.base(instance, disposing);
-                                        delete _cache[contextId];
+                                        Reflect.deleteProperty(_cache, contextId);
                                         return true;
                                     }
                                 }
@@ -1476,7 +1507,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
             }))();
             DEFAULT_POLICIES = [new ConstructorPolicy(), new PolicyMetadataPolicy()];
 
-            _export('IoContainer', IoContainer = CallbackHandler.extend(Container, {
+            _export('IoContainer', IoContainer = Handler.extend(Container, {
                 constructor: function constructor() {
                     var _policies = DEFAULT_POLICIES;
                     this.extend({

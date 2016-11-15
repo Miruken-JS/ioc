@@ -1,9 +1,12 @@
 import {
     Abstract, Disposing, DisposingMixin,
-    $isFunction
+    $isFunction, $decorate, getPropertyDescriptors
 } from "miruken-core";
 
-import { Context, ContextualHelper } from "miruken-context";
+import {
+    Context, ContextualHelper, ContextualMixin
+} from "miruken-context";
+
 import { ComponentPolicy } from "./policy";
 
 /**
@@ -27,19 +30,21 @@ export const Lifestyle = Abstract.extend(ComponentPolicy, Disposing, DisposingMi
      * Tracks the component instance for disposal.
      * @method trackInstance
      * @param {Object} instance  -  component instance.
+     * @returns {Object} tracked instance.
      */        
     trackInstance(instance) {
         if (instance && $isFunction(instance.dispose)) {
             const lifestyle = this;
-            instance.extend({
+            return $decorate(instance, {
                 dispose(disposing) {
-                    if (disposing || lifestyle.disposeInstance(instance, true)) {
+                    if (disposing || lifestyle.disposeInstance(this, true)) {
                         this.base();
-                        this.dispose = this.base;
+                        Reflect.deleteProperty(this, "dispose");
                     }
                 }
             });
         }
+        return instance;
     },
     /**
      * Disposes the component instance.
@@ -81,12 +86,15 @@ export const SingletonLifestyle = Lifestyle.extend({
     constructor(instance) {
         this.extend({
             resolve(factory) {
-                return instance ? instance : factory(object => {
-                    if (!instance && object) {
-                        instance = object;
-                        this.trackInstance(instance);
-                    }
-                });
+                if (instance == null) {
+                    return factory(object => {
+                        if (!instance && object) {
+                            instance = this.trackInstance(object);
+                            return instance;
+                        }})
+                }
+                instance = this.trackInstance(instance);
+                return instance;
             },
             disposeInstance(object, disposing) {
                 // Singletons cannot be disposed directly
@@ -122,24 +130,42 @@ export const ContextualLifestyle = Lifestyle.extend({
                     let   instance = _cache[id];
                     return instance ? instance : factory(object => {
                         if (object && !_cache[id]) {
-                            _cache[id] = instance = object;
-                            this.trackInstance(instance);
-                            ContextualHelper.bindContext(instance, context);
-                            context.onEnded(() => {
-                                instance.context = null;
-                                this.disposeInstance(instance);
-                                delete _cache[id];
-                            });
+                            instance   = this.trackInstance(object);
+                            _cache[id] = instance = this.trackContext(object, instance, context);
+                            ContextualHelper.bindContext(object, context, true);
+                            context.onEnded(() => instance.context = null);
                         }
+                        return instance;
                     });
                 }
+            },
+            trackContext(object, instance, context) {
+                const property = getPropertyDescriptors(instance, "context");
+                if (!(property && property.set)) {
+                    if (object === instance) {
+                        instance = $decorate(object, ContextualMixin);
+                    } else {
+                        instance.extend(ContextualMixin);
+                    }
+                }
+                const lifestyle = this;
+                return instance.extend({
+                    set context(value) {
+                        if (value == null) {
+                            this.base(null);
+                            lifestyle.disposeInstance(instance);
+                        } else if (value !== context) {
+                            throw new Error("Container managed instances cannot change context");
+                        }
+                    }
+                });
             },
             disposeInstance(instance, disposing) {
                 if (!disposing) {  // Cannot be disposed directly
                     for (let contextId in _cache) {
                         if (_cache[contextId] === instance) {
                             this.base(instance, disposing);
-                            delete _cache[contextId];
+                            Reflect.deleteProperty(_cache, contextId);
                             return true;
                         } 
                     }

@@ -221,9 +221,9 @@ function _registerHandler(container, key, type, lifestyle, factory, burden, poli
                  ? dependencies.then(createComponent)
                  : createComponent(dependencies);
             function createComponent(dependencies) {
-                const component = factory.call(composer, dependencies);
+                let component = factory.call(composer, dependencies);
                 if ($isFunction(configure)) {
-                    configure(component, dependencies);
+                    component = configure(component, dependencies) || component;
                 }
                 return applyPolicies(0);
                 function applyPolicies(index) {
