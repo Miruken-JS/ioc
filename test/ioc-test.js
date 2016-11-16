@@ -505,7 +505,8 @@ describe("ContextualLifestyle", () => {
             Promise.resolve(container.resolve(Controller)).then(controller => {
                 expect(controller.disposed).to.not.be.true;
                 controller.context = null;
-                expect(controller.disposed).to.be.true;                
+                expect(controller.disposed).to.be.true;
+                controller.context = context.newChild();
                 done();
             });
         });        

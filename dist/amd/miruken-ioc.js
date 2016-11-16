@@ -314,8 +314,8 @@ define(['exports', 'miruken-core', 'miruken-callback', 'miruken-context', 'miruk
                                 v: instance ? instance : factory(function (object) {
                                     if (object && !_cache[id]) {
                                         instance = _this3.trackInstance(object);
-                                        _cache[id] = instance = _this3.trackContext(object, instance, context);
-                                        _mirukenContext.ContextualHelper.bindContext(object, context, true);
+                                        instance = _this3.setContext(object, instance, context);
+                                        _cache[id] = instance;
                                         context.onEnded(function () {
                                             return instance.context = null;
                                         });
@@ -328,16 +328,13 @@ define(['exports', 'miruken-core', 'miruken-callback', 'miruken-context', 'miruk
                         if ((typeof _ret2 === 'undefined' ? 'undefined' : _typeof(_ret2)) === "object") return _ret2.v;
                     }
                 },
-                trackContext: function trackContext(object, instance, context) {
-                    var property = (0, _mirukenCore.getPropertyDescriptors)(instance, "context");
+                setContext: function setContext(object, instance, context) {
+                    var lifestyle = this,
+                        property = (0, _mirukenCore.getPropertyDescriptors)(instance, "context");
                     if (!(property && property.set)) {
-                        if (object === instance) {
-                            instance = (0, _mirukenCore.$decorate)(object, _mirukenContext.ContextualMixin);
-                        } else {
-                            instance.extend(_mirukenContext.ContextualMixin);
-                        }
+                        instance = object === instance ? (0, _mirukenCore.$decorate)(object, _mirukenContext.ContextualMixin) : instance.extend(_mirukenContext.ContextualMixin);
                     }
-                    var lifestyle = this;
+                    _mirukenContext.ContextualHelper.bindContext(instance, context, true);
                     return instance.extend({
                         set context(value) {
                             if (value == null) {
@@ -355,6 +352,7 @@ define(['exports', 'miruken-core', 'miruken-callback', 'miruken-context', 'miruk
                             if (_cache[contextId] === instance) {
                                 this.base(instance, disposing);
                                 Reflect.deleteProperty(_cache, contextId);
+                                Reflect.deleteProperty(instance, "context");
                                 return true;
                             }
                         }

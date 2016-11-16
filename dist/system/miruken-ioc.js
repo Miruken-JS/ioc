@@ -717,8 +717,8 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
                                         v: instance ? instance : factory(function (object) {
                                             if (object && !_cache[id]) {
                                                 instance = _this3.trackInstance(object);
-                                                _cache[id] = instance = _this3.trackContext(object, instance, context);
-                                                ContextualHelper.bindContext(object, context, true);
+                                                instance = _this3.setContext(object, instance, context);
+                                                _cache[id] = instance;
                                                 context.onEnded(function () {
                                                     return instance.context = null;
                                                 });
@@ -731,16 +731,13 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
                                 if ((typeof _ret2 === 'undefined' ? 'undefined' : _typeof(_ret2)) === "object") return _ret2.v;
                             }
                         },
-                        trackContext: function trackContext(object, instance, context) {
-                            var property = getPropertyDescriptors(instance, "context");
+                        setContext: function setContext(object, instance, context) {
+                            var lifestyle = this,
+                                property = getPropertyDescriptors(instance, "context");
                             if (!(property && property.set)) {
-                                if (object === instance) {
-                                    instance = $decorate(object, ContextualMixin);
-                                } else {
-                                    instance.extend(ContextualMixin);
-                                }
+                                instance = object === instance ? $decorate(object, ContextualMixin) : instance.extend(ContextualMixin);
                             }
-                            var lifestyle = this;
+                            ContextualHelper.bindContext(instance, context, true);
                             return instance.extend({
                                 set context(value) {
                                     if (value == null) {
@@ -758,6 +755,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-context', 'miruken
                                     if (_cache[contextId] === instance) {
                                         this.base(instance, disposing);
                                         Reflect.deleteProperty(_cache, contextId);
+                                        Reflect.deleteProperty(instance, "context");
                                         return true;
                                     }
                                 }

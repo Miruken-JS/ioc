@@ -443,7 +443,8 @@ export const SingletonLifestyle = Lifestyle.extend({
                         if (!instance && object) {
                             instance = this.trackInstance(object);
                             return instance;
-                        }})
+                        }
+                    });
                 }
                 instance = this.trackInstance(instance);
                 return instance;
@@ -482,25 +483,24 @@ export const ContextualLifestyle = Lifestyle.extend({
                     let   instance = _cache[id];
                     return instance ? instance : factory(object => {
                         if (object && !_cache[id]) {
-                            instance   = this.trackInstance(object);
-                            _cache[id] = instance = this.trackContext(object, instance, context);
-                            ContextualHelper.bindContext(object, context, true);
+                            instance = this.trackInstance(object);
+                            instance = this.setContext(object, instance, context);
+                            _cache[id] = instance;
                             context.onEnded(() => instance.context = null);
                         }
                         return instance;
                     });
                 }
             },
-            trackContext(object, instance, context) {
-                const property = getPropertyDescriptors(instance, "context");
+            setContext(object, instance, context) {
+                const lifestyle = this,
+                      property  = getPropertyDescriptors(instance, "context");
                 if (!(property && property.set)) {
-                    if (object === instance) {
-                        instance = $decorate(object, ContextualMixin);
-                    } else {
-                        instance.extend(ContextualMixin);
-                    }
+                    instance = object === instance
+                             ? $decorate(object, ContextualMixin)
+                             : instance.extend(ContextualMixin);
                 }
-                const lifestyle = this;
+                ContextualHelper.bindContext(instance, context, true);
                 return instance.extend({
                     set context(value) {
                         if (value == null) {
@@ -517,7 +517,8 @@ export const ContextualLifestyle = Lifestyle.extend({
                     for (let contextId in _cache) {
                         if (_cache[contextId] === instance) {
                             this.base(instance, disposing);
-                            Reflect.deleteProperty(_cache, contextId);
+                            Reflect.deleteProperty(_cache, contextId);                            
+                            Reflect.deleteProperty(instance, "context");
                             return true;
                         } 
                     }
