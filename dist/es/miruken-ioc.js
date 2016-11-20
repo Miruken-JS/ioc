@@ -1,232 +1,49 @@
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-exports.IoContainer = exports.PolicyMetadataPolicy = exports.PropertyInjectionPolicy = exports.ConstructorPolicy = exports.KeyBuilder = exports.BasedOnBuilder = exports.FromPackageBuilder = exports.FromBuilder = exports.Installer = exports.InterceptorBuilder = exports.ComponentBuilder = exports.ComponentModel = exports.ContextualLifestyle = exports.SingletonLifestyle = exports.TransientLifestyle = exports.Lifestyle = exports.DependencyResolution = exports.DependencyManager = exports.DependencyModel = exports.DependencyModifier = exports.$container = exports.$$composer = exports.Container = exports.Registration = exports.policy = exports.ComponentPolicy = undefined;
-
-var _desc, _value, _obj;
-
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
-exports.DependencyResolutionError = DependencyResolutionError;
-exports.$component = $component;
-exports.ComponentModelError = ComponentModelError;
-exports.$classes = $classes;
-
-var _mirukenCore = require('miruken-core');
-
-var _mirukenCallback = require('miruken-callback');
-
-var _mirukenContext = require('miruken-context');
-
-var _mirukenValidate = require('miruken-validate');
-
-function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) {
-    var desc = {};
-    Object['ke' + 'ys'](descriptor).forEach(function (key) {
-        desc[key] = descriptor[key];
-    });
-    desc.enumerable = !!desc.enumerable;
-    desc.configurable = !!desc.configurable;
-
-    if ('value' in desc || desc.initializer) {
-        desc.writable = true;
-    }
-
-    desc = decorators.slice().reverse().reduce(function (desc, decorator) {
-        return decorator(target, property, desc) || desc;
-    }, desc);
-
-    if (context && desc.initializer !== void 0) {
-        desc.value = desc.initializer ? desc.initializer.call(context) : void 0;
-        desc.initializer = undefined;
-    }
-
-    if (desc.initializer === void 0) {
-        Object['define' + 'Property'](target, property, desc);
-        desc = null;
-    }
-
-    return desc;
-}
+import { $child, $createModifier, $decorate, $eq, $eval, $every, $flatten, $instant, $isClass, $isFunction, $isNothing, $isPromise, $isProtocol, $isSomething, $lazy, $optional, $promise, $protocols, $use, Abstract, ArrayManager, Base, Disposing, DisposingMixin, Facet, Flags, Invoking, Metadata, Modifier, Policy, Protocol, ProxyBuilder, StrictProtocol, design, emptyArray, getPropertyDescriptors, inject, isDescriptor } from 'miruken-core';
+import { Context, ContextualHelper, ContextualMixin } from 'miruken-context';
+import { Validator, validateThat } from 'miruken-validate';
+import { $composer, $provide, $unhandled, Handler, Resolution } from 'miruken-callback';
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 var policyMetadataKey = Symbol();
 
-var ComponentPolicy = exports.ComponentPolicy = _mirukenCore.Protocol.extend({
+var ComponentPolicy = Protocol.extend({
     applyPolicy: function applyPolicy(componentModel, policies) {},
     componentCreated: function componentCreated(component, dependencies, composer) {}
 });
 
-var policy = exports.policy = _mirukenCore.Metadata.decorator(policyMetadataKey, function (target, key, descriptor, policies) {
-    if ((0, _mirukenCore.isDescriptor)(descriptor)) {
+var policy = Metadata.decorator(policyMetadataKey, function (target, key, descriptor, policies) {
+    if (isDescriptor(descriptor)) {
         throw new SyntaxError("@policy can only be applied to a class");
     }
-    policies = (0, _mirukenCore.$flatten)(key, true);
+    policies = $flatten(key, true);
     if (policies.length > 0) {
         var _Metadata$getOrCreate;
 
-        (_Metadata$getOrCreate = _mirukenCore.Metadata.getOrCreateOwn(policyMetadataKey, target, function () {
+        (_Metadata$getOrCreate = Metadata.getOrCreateOwn(policyMetadataKey, target, function () {
             return [];
         })).push.apply(_Metadata$getOrCreate, _toConsumableArray(policies.map(_createOrUsePolicy)));
-    };
+    }
 });
 
 function _createOrUsePolicy(policy) {
-    return (0, _mirukenCore.$isFunction)(policy) ? new policy() : policy;
+    return $isFunction(policy) ? new policy() : policy;
 }
 
-var Registration = exports.Registration = _mirukenCore.Protocol.extend({
-    register: function register(container, composer) {}
-});
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
-var Container = exports.Container = _mirukenCore.StrictProtocol.extend(_mirukenCore.Invoking, _mirukenCore.Disposing, {
-    register: function register(registrations) {},
-    addComponent: function addComponent(componentModel, policies) {},
-    addPolicies: function addPolicies(policies) {},
-    resolve: function resolve(key) {},
-    resolveAll: function resolveAll(key) {}
-});
-
-var $$composer = exports.$$composer = Symbol();
-
-var $container = exports.$container = (0, _mirukenCore.$createModifier)();
-
-var DependencyModifier = exports.DependencyModifier = (0, _mirukenCore.Flags)({
-    None: 0,
-
-    Use: 1 << 0,
-
-    Lazy: 1 << 1,
-
-    Every: 1 << 2,
-
-    Dynamic: 1 << 3,
-
-    Optional: 1 << 4,
-
-    Promise: 1 << 5,
-
-    Invariant: 1 << 6,
-
-    Container: 1 << 7,
-
-    Child: 1 << 8
-});
-
-DependencyModifier.Use.modifier = _mirukenCore.$use;
-DependencyModifier.Lazy.modifier = _mirukenCore.$lazy;
-DependencyModifier.Every.modifier = _mirukenCore.$every;
-DependencyModifier.Dynamic.modifier = _mirukenCore.$eval;
-DependencyModifier.Child.modifier = _mirukenCore.$child;
-DependencyModifier.Optional.modifier = _mirukenCore.$optional;
-DependencyModifier.Promise.modifier = _mirukenCore.$promise;
-DependencyModifier.Container.modifier = $container;
-DependencyModifier.Invariant.modifier = _mirukenCore.$eq;
-
-var DependencyModel = exports.DependencyModel = _mirukenCore.Base.extend({
-    constructor: function constructor(dependency, modifiers) {
-        modifiers = DependencyModifier.None.addFlag(modifiers);
-        if (dependency instanceof _mirukenCore.Modifier) {
-            DependencyModifier.items.forEach(function (flag) {
-                var modifier = flag.modifier;
-                if (modifier && modifier.test(dependency)) {
-                    modifiers = modifiers.addFlag(flag);
-                }
-            });
-            dependency = _mirukenCore.Modifier.unwrap(dependency);
-        }
-        this.extend({
-            get dependency() {
-                return dependency;
-            },
-
-            get modifiers() {
-                return modifiers;
-            }
-        });
-    },
-    test: function test(modifier) {
-        return this.modifiers.hasFlag(modifier);
-    }
-}, {
-    coerce: function coerce(object) {
-        return object === undefined ? undefined : new DependencyModel(object);
-    }
-});
-
-var DependencyManager = exports.DependencyManager = _mirukenCore.ArrayManager.extend({
-    constructor: function constructor(dependencies) {
-        this.base(dependencies);
-    },
-    mapItem: function mapItem(item) {
-        return !(item !== undefined && item instanceof DependencyModel) ? DependencyModel(item) : item;
-    }
-});
-
-var DependencyResolution = exports.DependencyResolution = _mirukenCallback.Resolution.extend({
-    constructor: function constructor(key, parent, many) {
-        var _type = void 0,
-            _handler = void 0;
-        this.base(key, many);
-        this.extend({
-            claim: function claim(handler, type) {
-                if (this.isResolvingDependency(handler)) {
-                    return false;
-                }
-                _handler = handler;
-                _type = type;
-                return true;
-            },
-
-            get parent() {
-                return parent;
-            },
-
-            get type() {
-                return _type;
-            },
-            isResolvingDependency: function isResolvingDependency(handler) {
-                return handler === _handler || parent && parent.isResolvingDependency(handler);
-            },
-            formattedDependencyChain: function formattedDependencyChain() {
-                var invariant = _mirukenCore.$eq.test(key),
-                    rawKey = _mirukenCore.Modifier.unwrap(key),
-                    keyDisplay = invariant ? '`' + rawKey + '`' : rawKey,
-                    display = _type ? '(' + keyDisplay + ' <- ' + _type + ')' : keyDisplay;
-                return parent ? display + ' <= ' + parent.formattedDependencyChain() : display;
-            }
-        });
-    }
-});
-
-function DependencyResolutionError(dependency, message) {
-    this.message = message || 'Dependency ' + dependency.formattedDependencyChain() + ' could not be resolved.';
-
-    this.dependency = dependency;
-    if (Error.captureStackTrace) {
-        Error.captureStackTrace(this, this.constructor);
-    } else {
-        Error.call(this);
-    }
-}
-DependencyResolutionError.prototype = new Error();
-DependencyResolutionError.prototype.constructor = DependencyResolutionError;
-
-var Lifestyle = exports.Lifestyle = _mirukenCore.Abstract.extend(ComponentPolicy, _mirukenCore.Disposing, _mirukenCore.DisposingMixin, {
+var Lifestyle = Abstract.extend(ComponentPolicy, Disposing, DisposingMixin, {
     resolve: function resolve(factory) {
         return factory();
     },
     trackInstance: function trackInstance(instance) {
         var _this = this;
 
-        if (instance && (0, _mirukenCore.$isFunction)(instance.dispose)) {
+        if (instance && $isFunction(instance.dispose)) {
             var _ret = function () {
                 var lifestyle = _this;
                 return {
-                    v: (0, _mirukenCore.$decorate)(instance, {
+                    v: $decorate(instance, {
                         dispose: function dispose(disposing) {
                             if (disposing || lifestyle.disposeInstance(this, true)) {
                                 this.base();
@@ -237,12 +54,12 @@ var Lifestyle = exports.Lifestyle = _mirukenCore.Abstract.extend(ComponentPolicy
                 };
             }();
 
-            if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
+            if ((typeof _ret === "undefined" ? "undefined" : _typeof(_ret)) === "object") return _ret.v;
         }
         return instance;
     },
     disposeInstance: function disposeInstance(instance, disposing) {
-        if (!disposing && instance && (0, _mirukenCore.$isFunction)(instance.dispose)) {
+        if (!disposing && instance && $isFunction(instance.dispose)) {
             instance.dispose(true);
         }
         return !disposing;
@@ -252,14 +69,14 @@ var Lifestyle = exports.Lifestyle = _mirukenCore.Abstract.extend(ComponentPolicy
     }
 });
 
-var TransientLifestyle = exports.TransientLifestyle = Lifestyle.extend({
+var TransientLifestyle = Lifestyle.extend({
     constructor: function constructor() {},
     applyPolicy: function applyPolicy(componentModel) {
         componentModel.lifestyle = this;
     }
 });
 
-var SingletonLifestyle = exports.SingletonLifestyle = Lifestyle.extend({
+var SingletonLifestyle = Lifestyle.extend({
     constructor: function constructor(instance) {
         this.extend({
             resolve: function resolve(factory) {
@@ -292,14 +109,14 @@ var SingletonLifestyle = exports.SingletonLifestyle = Lifestyle.extend({
     }
 });
 
-var ContextualLifestyle = exports.ContextualLifestyle = Lifestyle.extend({
+var ContextualLifestyle = Lifestyle.extend({
     constructor: function constructor() {
         var _cache = {};
         this.extend({
             resolve: function resolve(factory, composer) {
                 var _this3 = this;
 
-                var context = composer.resolve(_mirukenContext.Context);
+                var context = composer.resolve(Context);
                 if (context) {
                     var _ret2 = function () {
                         var id = context.id;
@@ -319,16 +136,16 @@ var ContextualLifestyle = exports.ContextualLifestyle = Lifestyle.extend({
                         };
                     }();
 
-                    if ((typeof _ret2 === 'undefined' ? 'undefined' : _typeof(_ret2)) === "object") return _ret2.v;
+                    if ((typeof _ret2 === "undefined" ? "undefined" : _typeof(_ret2)) === "object") return _ret2.v;
                 }
             },
             setContext: function setContext(object, instance, context) {
                 var lifestyle = this,
-                    property = (0, _mirukenCore.getPropertyDescriptors)(instance, "context");
+                    property = getPropertyDescriptors(instance, "context");
                 if (!(property && property.set)) {
-                    instance = object === instance ? (0, _mirukenCore.$decorate)(object, _mirukenContext.ContextualMixin) : instance.extend(_mirukenContext.ContextualMixin);
+                    instance = object === instance ? $decorate(object, ContextualMixin) : instance.extend(ContextualMixin);
                 }
-                _mirukenContext.ContextualHelper.bindContext(instance, context, true);
+                ContextualHelper.bindContext(instance, context, true);
                 return instance.extend({
                     set context(value) {
                         if (value == null) {
@@ -363,9 +180,177 @@ var ContextualLifestyle = exports.ContextualLifestyle = Lifestyle.extend({
     }
 });
 
-var proxyBuilder = new _mirukenCore.ProxyBuilder();
+var $$composer = Symbol();
 
-var ComponentModel = exports.ComponentModel = _mirukenCore.Base.extend((_obj = {
+var $container = $createModifier();
+
+var DependencyModifier = Flags({
+  None: 0,
+
+  Use: 1 << 0,
+
+  Lazy: 1 << 1,
+
+  Every: 1 << 2,
+
+  Dynamic: 1 << 3,
+
+  Optional: 1 << 4,
+
+  Promise: 1 << 5,
+
+  Invariant: 1 << 6,
+
+  Container: 1 << 7,
+
+  Child: 1 << 8
+});
+
+DependencyModifier.Use.modifier = $use;
+DependencyModifier.Lazy.modifier = $lazy;
+DependencyModifier.Every.modifier = $every;
+DependencyModifier.Dynamic.modifier = $eval;
+DependencyModifier.Child.modifier = $child;
+DependencyModifier.Optional.modifier = $optional;
+DependencyModifier.Promise.modifier = $promise;
+DependencyModifier.Container.modifier = $container;
+DependencyModifier.Invariant.modifier = $eq;
+
+var DependencyModel = Base.extend({
+  constructor: function constructor(dependency, modifiers) {
+    modifiers = DependencyModifier.None.addFlag(modifiers);
+    if (dependency instanceof Modifier) {
+      DependencyModifier.items.forEach(function (flag) {
+        var modifier = flag.modifier;
+        if (modifier && modifier.test(dependency)) {
+          modifiers = modifiers.addFlag(flag);
+        }
+      });
+      dependency = Modifier.unwrap(dependency);
+    }
+    this.extend({
+      get dependency() {
+        return dependency;
+      },
+
+      get modifiers() {
+        return modifiers;
+      }
+    });
+  },
+  test: function test(modifier) {
+    return this.modifiers.hasFlag(modifier);
+  }
+}, {
+  coerce: function coerce(object) {
+    return object === undefined ? undefined : new DependencyModel(object);
+  }
+});
+
+var DependencyManager = ArrayManager.extend({
+  constructor: function constructor(dependencies) {
+    this.base(dependencies);
+  },
+  mapItem: function mapItem(item) {
+    return !(item !== undefined && item instanceof DependencyModel) ? DependencyModel(item) : item;
+  }
+});
+
+var DependencyResolution = Resolution.extend({
+  constructor: function constructor(key, parent, many) {
+    var _type = void 0,
+        _handler = void 0;
+    this.base(key, many);
+    this.extend({
+      claim: function claim(handler, type) {
+        if (this.isResolvingDependency(handler)) {
+          return false;
+        }
+        _handler = handler;
+        _type = type;
+        return true;
+      },
+
+      get parent() {
+        return parent;
+      },
+
+      get type() {
+        return _type;
+      },
+      isResolvingDependency: function isResolvingDependency(handler) {
+        return handler === _handler || parent && parent.isResolvingDependency(handler);
+      },
+      formattedDependencyChain: function formattedDependencyChain() {
+        var invariant = $eq.test(key),
+            rawKey = Modifier.unwrap(key),
+            keyDisplay = invariant ? "`" + rawKey + "`" : rawKey,
+            display = _type ? "(" + keyDisplay + " <- " + _type + ")" : keyDisplay;
+        return parent ? display + " <= " + parent.formattedDependencyChain() : display;
+      }
+    });
+  }
+});
+
+function DependencyResolutionError(dependency, message) {
+  this.message = message || "Dependency " + dependency.formattedDependencyChain() + " could not be resolved.";
+
+  this.dependency = dependency;
+  if (Error.captureStackTrace) {
+    Error.captureStackTrace(this, this.constructor);
+  } else {
+    Error.call(this);
+  }
+}
+DependencyResolutionError.prototype = new Error();
+DependencyResolutionError.prototype.constructor = DependencyResolutionError;
+
+var Registration = Protocol.extend({
+  register: function register(container, composer) {}
+});
+
+var Container = StrictProtocol.extend(Invoking, Disposing, {
+  register: function register(registrations) {},
+  addComponent: function addComponent(componentModel, policies) {},
+  addPolicies: function addPolicies(policies) {},
+  resolve: function resolve(key) {},
+  resolveAll: function resolveAll(key) {}
+});
+
+var _obj;
+
+function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) {
+    var desc = {};
+    Object['ke' + 'ys'](descriptor).forEach(function (key) {
+        desc[key] = descriptor[key];
+    });
+    desc.enumerable = !!desc.enumerable;
+    desc.configurable = !!desc.configurable;
+
+    if ('value' in desc || desc.initializer) {
+        desc.writable = true;
+    }
+
+    desc = decorators.slice().reverse().reduce(function (desc, decorator) {
+        return decorator(target, property, desc) || desc;
+    }, desc);
+
+    if (context && desc.initializer !== void 0) {
+        desc.value = desc.initializer ? desc.initializer.call(context) : void 0;
+        desc.initializer = undefined;
+    }
+
+    if (desc.initializer === void 0) {
+        Object['define' + 'Property'](target, property, desc);
+        desc = null;
+    }
+
+    return desc;
+}
+
+var proxyBuilder = new ProxyBuilder();
+
+var ComponentModel = Base.extend((_obj = {
     constructor: function constructor() {
         var _key = void 0,
             _impl = void 0,
@@ -383,14 +368,14 @@ var ComponentModel = exports.ComponentModel = _mirukenCore.Base.extend((_obj = {
 
             get implementation() {
                 var impl = _impl;
-                if (!impl && (0, _mirukenCore.$isClass)(_key)) {
+                if (!impl && $isClass(_key)) {
                     impl = _key;
                 }
                 return impl;
             },
             set implementation(value) {
-                if ((0, _mirukenCore.$isSomething)(value) && !(0, _mirukenCore.$isClass)(value)) {
-                    throw new TypeError(value + ' is not a class.');
+                if ($isSomething(value) && !$isClass(value)) {
+                    throw new TypeError(value + " is not a class.");
                 }
                 _impl = value;
             },
@@ -406,8 +391,8 @@ var ComponentModel = exports.ComponentModel = _mirukenCore.Base.extend((_obj = {
                 return _lifestyle;
             },
             set lifestyle(value) {
-                if (!(0, _mirukenCore.$isSomething)(value) && !(value instanceof Lifestyle)) {
-                    throw new TypeError(value + ' is not a Lifestyle.');
+                if (!$isSomething(value) && !(value instanceof Lifestyle)) {
+                    throw new TypeError(value + " is not a Lifestyle.");
                 }
                 _lifestyle = value;
             },
@@ -416,13 +401,13 @@ var ComponentModel = exports.ComponentModel = _mirukenCore.Base.extend((_obj = {
                 var factory = _factory,
                     clazz = this.implementation;
                 if (!factory) {
-                    var interceptors = _burden[_mirukenCore.Facet.Interceptors];
+                    var interceptors = _burden[Facet.Interceptors];
                     if (interceptors && interceptors.length > 0) {
                         var types = [];
                         if (clazz) {
                             types.push(clazz);
                         }
-                        if ((0, _mirukenCore.$isProtocol)(_key)) {
+                        if ($isProtocol(_key)) {
                             types.push(_key);
                         }
                         return _makeProxyFactory(types);
@@ -433,25 +418,25 @@ var ComponentModel = exports.ComponentModel = _mirukenCore.Base.extend((_obj = {
                 return factory;
             },
             set factory(value) {
-                if ((0, _mirukenCore.$isSomething)(value) && !(0, _mirukenCore.$isFunction)(value)) {
-                    throw new TypeError(value + ' is not a function.');
+                if ($isSomething(value) && !$isFunction(value)) {
+                    throw new TypeError(value + " is not a function.");
                 }
                 _factory = value;
             },
             getDependencies: function getDependencies(key) {
-                return _burden[key || _mirukenCore.Facet.Parameters];
+                return _burden[key || Facet.Parameters];
             },
             setDependencies: function setDependencies(key, value) {
                 if (arguments.length === 1) {
-                    value = key, key = _mirukenCore.Facet.Parameters;
+                    value = key, key = Facet.Parameters;
                 }
-                if ((0, _mirukenCore.$isSomething)(value) && !Array.isArray(value)) {
-                    throw new TypeError(value + ' is not an array.');
+                if ($isSomething(value) && !Array.isArray(value)) {
+                    throw new TypeError(value + " is not an array.");
                 }
                 _burden[key] = value.map(DependencyModel);
             },
             allDependenciesDefined: function allDependenciesDefined(key) {
-                var deps = _burden[key || _mirukenCore.Facet.Parameters];
+                var deps = _burden[key || Facet.Parameters];
                 if (!deps) return false;
                 for (var i = 0; i < deps.length; ++i) {
                     if (deps[i] === undefined) {
@@ -462,11 +447,11 @@ var ComponentModel = exports.ComponentModel = _mirukenCore.Base.extend((_obj = {
             },
             manageDependencies: function manageDependencies(key, actions) {
                 if (arguments.length === 1) {
-                    actions = key, key = _mirukenCore.Facet.Parameters;
+                    actions = key, key = Facet.Parameters;
                 }
                 var dependencies = _burden[key];
                 var manager = new DependencyManager(dependencies);
-                if ((0, _mirukenCore.$isFunction)(actions)) {
+                if ($isFunction(actions)) {
                     actions(manager);
                 }
                 dependencies = manager.getItems();
@@ -495,11 +480,11 @@ var ComponentModel = exports.ComponentModel = _mirukenCore.Base.extend((_obj = {
             });
         }
     }
-}, (_applyDecoratedDescriptor(_obj, 'keyCanBeDetermined', [_mirukenValidate.validateThat], Object.getOwnPropertyDescriptor(_obj, 'keyCanBeDetermined'), _obj), _applyDecoratedDescriptor(_obj, 'factoryCanBeDetermined', [_mirukenValidate.validateThat], Object.getOwnPropertyDescriptor(_obj, 'factoryCanBeDetermined'), _obj)), _obj));
+}, (_applyDecoratedDescriptor(_obj, "keyCanBeDetermined", [validateThat], Object.getOwnPropertyDescriptor(_obj, "keyCanBeDetermined"), _obj), _applyDecoratedDescriptor(_obj, "factoryCanBeDetermined", [validateThat], Object.getOwnPropertyDescriptor(_obj, "factoryCanBeDetermined"), _obj)), _obj));
 
 function _makeClassFactory(clazz) {
     return function (burden) {
-        return Reflect.construct(clazz, burden[_mirukenCore.Facet.Parameters] || _mirukenCore.emptyArray);
+        return Reflect.construct(clazz, burden[Facet.Parameters] || emptyArray);
     };
 }
 
@@ -510,7 +495,7 @@ function _makeProxyFactory(types) {
     };
 }
 
-var ComponentBuilder = exports.ComponentBuilder = _mirukenCore.Base.extend(Registration, {
+var ComponentBuilder = Base.extend(Registration, {
     constructor: function constructor(key) {
         var _componentModel = new ComponentModel(),
             _newInContext = void 0,
@@ -531,7 +516,7 @@ var ComponentBuilder = exports.ComponentBuilder = _mirukenCore.Base.extend(Regis
                     dependencies[_key2] = arguments[_key2];
                 }
 
-                dependencies = (0, _mirukenCore.$flatten)(dependencies);
+                dependencies = $flatten(dependencies);
                 _componentModel.setDependencies(dependencies);
                 return this;
             },
@@ -564,21 +549,21 @@ var ComponentBuilder = exports.ComponentBuilder = _mirukenCore.Base.extend(Regis
                 return this;
             },
             interceptors: function interceptors() {
-                for (var _len2 = arguments.length, _interceptors = Array(_len2), _key3 = 0; _key3 < _len2; _key3++) {
-                    _interceptors[_key3] = arguments[_key3];
+                for (var _len2 = arguments.length, interceptors = Array(_len2), _key3 = 0; _key3 < _len2; _key3++) {
+                    interceptors[_key3] = arguments[_key3];
                 }
 
-                _interceptors = (0, _mirukenCore.$flatten)(_interceptors, true);
-                return new InterceptorBuilder(this, _componentModel, _interceptors);
+                interceptors = $flatten(interceptors, true);
+                return new InterceptorBuilder(this, _componentModel, interceptors);
             },
             policies: function policies() {
-                for (var _len3 = arguments.length, _policies2 = Array(_len3), _key4 = 0; _key4 < _len3; _key4++) {
-                    _policies2[_key4] = arguments[_key4];
+                for (var _len3 = arguments.length, policies = Array(_len3), _key4 = 0; _key4 < _len3; _key4++) {
+                    policies[_key4] = arguments[_key4];
                 }
 
-                _policies2 = (0, _mirukenCore.$flatten)(_policies2, true);
-                if (_policies2.length > 0) {
-                    _policies = (_policies || []).concat(_policies2);
+                policies = $flatten(policies, true);
+                if (policies.length > 0) {
+                    _policies = (_policies || []).concat(policies);
                 }
                 return this;
             },
@@ -588,11 +573,11 @@ var ComponentBuilder = exports.ComponentBuilder = _mirukenCore.Base.extend(Regis
                         var factory = _componentModel.factory;
                         _componentModel.factory = function (dependencies) {
                             var object = factory(dependencies),
-                                context = this.resolve(_mirukenContext.Context);
+                                context = this.resolve(Context);
                             if (_newInContext) {
-                                _mirukenContext.ContextualHelper.bindContext(object, context);
+                                ContextualHelper.bindContext(object, context);
                             } else {
-                                _mirukenContext.ContextualHelper.bindChildContext(context, object);
+                                ContextualHelper.bindChildContext(context, object);
                             }
                             return object;
                         };
@@ -604,14 +589,14 @@ var ComponentBuilder = exports.ComponentBuilder = _mirukenCore.Base.extend(Regis
     }
 });
 
-var InterceptorBuilder = exports.InterceptorBuilder = _mirukenCore.Base.extend(Registration, {
+var InterceptorBuilder = Base.extend(Registration, {
     constructor: function constructor(component, componentModel, interceptors) {
         this.extend({
             selectWith: function selectWith(selectors) {
-                componentModel.manageDependencies(_mirukenCore.Facet.InterceptorSelectors, function (manager) {
+                componentModel.manageDependencies(Facet.InterceptorSelectors, function (manager) {
                     selectors.forEach(function (selector) {
                         if (selector instanceof InterceptorSelector) {
-                            selecter = (0, _mirukenCore.$use)(selector);
+                            selecter = $use(selector);
                         }
                         manager.append(selector);
                     });
@@ -622,7 +607,7 @@ var InterceptorBuilder = exports.InterceptorBuilder = _mirukenCore.Base.extend(R
                 return this.atIndex(0);
             },
             atIndex: function atIndex(index) {
-                componentModel.manageDependencies(_mirukenCore.Facet.Interceptors, function (manager) {
+                componentModel.manageDependencies(Facet.Interceptors, function (manager) {
                     return interceptors.forEach(function (interceptor) {
                         return manager.insertIndex(index, interceptor);
                     });
@@ -630,7 +615,7 @@ var InterceptorBuilder = exports.InterceptorBuilder = _mirukenCore.Base.extend(R
                 return componentModel;
             },
             register: function register(container, composer) {
-                componentModel.manageDependencies(_mirukenCore.Facet.Interceptors, function (manager) {
+                componentModel.manageDependencies(Facet.Interceptors, function (manager) {
                     return manager.append(interceptors);
                 });
                 return component.register(container, composer);
@@ -659,11 +644,13 @@ function ComponentModelError(componentModel, validationResults, message) {
 ComponentModelError.prototype = new Error();
 ComponentModelError.prototype.constructor = ComponentModelError;
 
-var Installer = exports.Installer = _mirukenCore.Base.extend(Registration, {
+function _toConsumableArray$1(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
+var Installer = Base.extend(Registration, {
     register: function register(container, composer) {}
 });
 
-var FromBuilder = exports.FromBuilder = _mirukenCore.Base.extend(Registration, {
+var FromBuilder = Base.extend(Registration, {
     constructor: function constructor() {
         var _basedOn = void 0;
         this.extend({
@@ -671,11 +658,11 @@ var FromBuilder = exports.FromBuilder = _mirukenCore.Base.extend(Registration, {
                 return [];
             },
             basedOn: function basedOn() {
-                for (var _len4 = arguments.length, constraints = Array(_len4), _key5 = 0; _key5 < _len4; _key5++) {
-                    constraints[_key5] = arguments[_key5];
+                for (var _len = arguments.length, constraints = Array(_len), _key = 0; _key < _len; _key++) {
+                    constraints[_key] = arguments[_key];
                 }
 
-                _basedOn = new BasedOnBuilder(this, (0, _mirukenCore.$flatten)(constraints, true));
+                _basedOn = new BasedOnBuilder(this, $flatten(constraints, true));
                 return _basedOn;
             },
             register: function register(container, composer) {
@@ -702,7 +689,7 @@ var FromBuilder = exports.FromBuilder = _mirukenCore.Base.extend(Registration, {
     }
 });
 
-var FromPackageBuilder = exports.FromPackageBuilder = FromBuilder.extend({
+var FromPackageBuilder = FromBuilder.extend({
     constructor: function constructor(pkg, names) {
         this.base();
         this.extend({
@@ -718,7 +705,7 @@ var FromPackageBuilder = exports.FromPackageBuilder = FromBuilder.extend({
                         var name = _step.value;
 
                         var member = pkg[name];
-                        if (member != null && (0, _mirukenCore.$isClass)(member)) {
+                        if (member != null && $isClass(member)) {
                             classes.push({ name: name, member: member });
                         }
                     }
@@ -743,7 +730,7 @@ var FromPackageBuilder = exports.FromPackageBuilder = FromBuilder.extend({
     }
 });
 
-var BasedOnBuilder = exports.BasedOnBuilder = _mirukenCore.Base.extend(Registration, {
+var BasedOnBuilder = Base.extend(Registration, {
     constructor: function constructor(from, constraints) {
         var _if2 = void 0,
             _unless = void 0,
@@ -805,11 +792,11 @@ var BasedOnBuilder = exports.BasedOnBuilder = _mirukenCore.Base.extend(Registrat
                     for (var _iterator2 = constraints[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
                         var constraint = _step2.value;
 
-                        if ((0, _mirukenCore.$isProtocol)(constraint)) {
+                        if ($isProtocol(constraint)) {
                             if (!constraint.isAdoptedBy(clazz)) {
                                 continue;
                             }
-                        } else if ((0, _mirukenCore.$isClass)(constraint)) {
+                        } else if ($isClass(constraint)) {
                             if (!(clazz.prototype instanceof constraint)) {
                                 continue;
                             }
@@ -849,7 +836,7 @@ var BasedOnBuilder = exports.BasedOnBuilder = _mirukenCore.Base.extend(Registrat
     }
 });
 
-var KeyBuilder = exports.KeyBuilder = _mirukenCore.Base.extend({
+var KeyBuilder = Base.extend({
     constructor: function constructor(basedOn) {
         var _keySelector = void 0;
         this.extend({
@@ -865,7 +852,7 @@ var KeyBuilder = exports.KeyBuilder = _mirukenCore.Base.extend({
             },
             anyService: function anyService() {
                 return selectKeys(function (keys, clazz) {
-                    var services = (0, _mirukenCore.$protocols)(clazz);
+                    var services = $protocols(clazz);
                     if (services.length > 0) {
                         keys.push(services[0]);
                     }
@@ -873,12 +860,12 @@ var KeyBuilder = exports.KeyBuilder = _mirukenCore.Base.extend({
             },
             allServices: function allServices() {
                 return selectKeys(function (keys, clazz) {
-                    return keys.push.apply(keys, _toConsumableArray((0, _mirukenCore.$protocols)(clazz)));
+                    return keys.push.apply(keys, _toConsumableArray$1($protocols(clazz)));
                 });
             },
             mostSpecificService: function mostSpecificService(service) {
                 return selectKeys(function (keys, clazz, constraints) {
-                    if ((0, _mirukenCore.$isProtocol)(service)) {
+                    if ($isProtocol(service)) {
                         _addMatchingProtocols(clazz, service, keys);
                     } else {
                         var _iteratorNormalCompletion3 = true;
@@ -889,7 +876,7 @@ var KeyBuilder = exports.KeyBuilder = _mirukenCore.Base.extend({
                             for (var _iterator3 = constraints[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
                                 var constraint = _step3.value;
 
-                                if ((0, _mirukenCore.$isFunction)(constraint)) {
+                                if ($isFunction(constraint)) {
                                     _addMatchingProtocols(clazz, constraint, keys);
                                 }
                             }
@@ -917,8 +904,8 @@ var KeyBuilder = exports.KeyBuilder = _mirukenCore.Base.extend({
                             for (var _iterator4 = constraints[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
                                 var _constraint = _step4.value;
 
-                                if (_constraint !== _mirukenCore.Base && _constraint !== Object) {
-                                    if ((0, _mirukenCore.$isProtocol)(_constraint)) {
+                                if (_constraint !== Base && _constraint !== Object) {
+                                    if ($isProtocol(_constraint)) {
                                         if (_constraint.isAdoptedBy(clazz)) {
                                             keys.push(_constraint);
                                             break;
@@ -948,11 +935,11 @@ var KeyBuilder = exports.KeyBuilder = _mirukenCore.Base.extend({
             },
             name: function name(n) {
                 return selectKeys(function (keys, clazz, constraints, name) {
-                    if ((0, _mirukenCore.$isNothing)(n)) {
+                    if ($isNothing(n)) {
                         if (name) {
                             keys.push(name);
                         }
-                    } else if ((0, _mirukenCore.$isFunction)(n)) {
+                    } else if ($isFunction(n)) {
                         if (name = n(name)) {
                             keys.push(String(name));
                         }
@@ -1036,7 +1023,7 @@ function _addMatchingProtocols(clazz, preference, matches) {
         for (var _iterator6 = toplevel[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
             var protocol = _step6.value;
 
-            if ((0, _mirukenCore.$protocols)(protocol).indexOf(preference) >= 0) {
+            if ($protocols(protocol).indexOf(preference) >= 0) {
                 matches.push(protocol);
             }
         }
@@ -1057,7 +1044,7 @@ function _addMatchingProtocols(clazz, preference, matches) {
 }
 
 function _toplevelProtocols(type) {
-    var protocols = (0, _mirukenCore.$protocols)(type),
+    var protocols = $protocols(type),
         toplevel = protocols.slice();
     var _iteratorNormalCompletion7 = true;
     var _didIteratorError7 = false;
@@ -1067,7 +1054,7 @@ function _toplevelProtocols(type) {
         for (var _iterator7 = protocols[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
             var protocol = _step7.value;
 
-            var parents = (0, _mirukenCore.$protocols)(protocol);
+            var parents = $protocols(protocol);
             var _iteratorNormalCompletion8 = true;
             var _didIteratorError8 = false;
             var _iteratorError8 = undefined;
@@ -1112,15 +1099,19 @@ function _toplevelProtocols(type) {
     return toplevel;
 }
 
-var ConstructorPolicy = exports.ConstructorPolicy = _mirukenCore.Policy.extend(ComponentPolicy, {
+var _typeof$1 = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+function _toConsumableArray$2(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
+var ConstructorPolicy = Policy.extend(ComponentPolicy, {
     applyPolicy: function applyPolicy(componentModel) {
         var implementation = componentModel.implementation;
         if (!implementation) {
             return;
-        };
+        }
 
         componentModel.manageDependencies(function (manager) {
-            return _mirukenCore.inject.collect(implementation.prototype, "constructor", function (deps) {
+            return inject.collect(implementation.prototype, "constructor", function (deps) {
                 if (deps && deps.length > 0) {
                     manager.merge(deps);
                     return componentModel.allDependenciesDefined();
@@ -1130,14 +1121,14 @@ var ConstructorPolicy = exports.ConstructorPolicy = _mirukenCore.Policy.extend(C
 
         if (!componentModel.allDependenciesDefined()) {
             (function () {
-                var params = _mirukenCore.design.get(implementation.prototype, "constructor");
+                var params = design.get(implementation.prototype, "constructor");
                 if (params && params.length > 0) {
                     componentModel.manageDependencies(function (manager) {
                         for (var i = 0; i < params.length; ++i) {
                             if (!manager.getIndex(i)) {
                                 var param = params[i];
                                 if (Array.isArray(param)) {
-                                    param = (0, _mirukenCore.$every)(param[0]);
+                                    param = $every(param[0]);
                                 }
                                 manager.setIndex(i, param);
                             }
@@ -1149,48 +1140,48 @@ var ConstructorPolicy = exports.ConstructorPolicy = _mirukenCore.Policy.extend(C
     }
 });
 
-var PropertyInjectionPolicy = exports.PropertyInjectionPolicy = _mirukenCore.Policy.extend(ComponentPolicy, {
+var PropertyInjectionPolicy = Policy.extend(ComponentPolicy, {
     applyPolicy: function applyPolicy(componentModel) {
-        var _this4 = this;
+        var _this = this;
 
         var implementation = componentModel.implementation;
         if (!implementation) {
             return;
-        };
+        }
 
         var prototype = implementation.prototype,
-            props = (0, _mirukenCore.getPropertyDescriptors)(prototype);
+            props = getPropertyDescriptors(prototype);
         Reflect.ownKeys(props).forEach(function (key) {
             var descriptor = props[key];
-            if (!(0, _mirukenCore.$isFunction)(descriptor.value)) {
-                var _ret9 = function () {
-                    var dependency = _mirukenCore.inject.get(prototype, key);
-                    if ((0, _mirukenCore.$isNothing)(dependency)) {
-                        if (_this4.explicit) {
+            if (!$isFunction(descriptor.value)) {
+                var _ret2 = function () {
+                    var dependency = inject.get(prototype, key);
+                    if ($isNothing(dependency)) {
+                        if (_this.explicit) {
                             return {
                                 v: void 0
                             };
                         }
-                        dependency = _mirukenCore.design.get(prototype, key);
+                        dependency = design.get(prototype, key);
                     }
                     if (dependency) {
-                        componentModel.manageDependencies('property:' + key, function (manager) {
+                        componentModel.manageDependencies("property:" + key, function (manager) {
                             if (!manager.getIndex(0)) {
-                                manager.setIndex(0, (0, _mirukenCore.$optional)(dependency));
+                                manager.setIndex(0, $optional(dependency));
                             }
                         });
                     }
                 }();
 
-                if ((typeof _ret9 === 'undefined' ? 'undefined' : _typeof(_ret9)) === "object") return _ret9.v;
+                if ((typeof _ret2 === "undefined" ? "undefined" : _typeof$1(_ret2)) === "object") return _ret2.v;
             }
         });
     },
     componentCreated: function componentCreated(component, dependencies) {
         Reflect.ownKeys(dependencies).forEach(function (key) {
-            if ((0, _mirukenCore.$isFunction)(key.startsWith) && key.startsWith("property:")) {
+            if ($isFunction(key.startsWith) && key.startsWith("property:")) {
                 var dependency = dependencies[key][0];
-                if ((0, _mirukenCore.$isSomething)(dependency)) {
+                if ($isSomething(dependency)) {
                     var property = key.substring(9);
                     component[property] = dependency;
                 }
@@ -1199,23 +1190,23 @@ var PropertyInjectionPolicy = exports.PropertyInjectionPolicy = _mirukenCore.Pol
     }
 });
 
-var PolicyMetadataPolicy = exports.PolicyMetadataPolicy = _mirukenCore.Policy.extend(ComponentPolicy, {
+var PolicyMetadataPolicy = Policy.extend(ComponentPolicy, {
     applyPolicy: function applyPolicy(componentModel, policies) {
         var implementation = componentModel.implementation;
         if (implementation) {
             (function () {
                 var index = policies.length;
                 policy.collect(implementation, function (ps) {
-                    return policies.splice.apply(policies, [index, 0].concat(_toConsumableArray(ps)));
+                    return policies.splice.apply(policies, [index, 0].concat(_toConsumableArray$2(ps)));
                 });
             })();
         }
     }
 });
 
-var InitializationPolicy = new (_mirukenCore.Policy.extend(ComponentPolicy, {
+var InitializationPolicy = new (Policy.extend(ComponentPolicy, {
     componentCreated: function componentCreated(component) {
-        if ((0, _mirukenCore.$isFunction)(component.initialize)) {
+        if ($isFunction(component.initialize)) {
             return component.initialize();
         }
     }
@@ -1223,35 +1214,35 @@ var InitializationPolicy = new (_mirukenCore.Policy.extend(ComponentPolicy, {
 
 var DEFAULT_POLICIES = [new ConstructorPolicy(), new PolicyMetadataPolicy()];
 
-var IoContainer = exports.IoContainer = _mirukenCallback.Handler.extend(Container, {
+var IoContainer = Handler.extend(Container, {
     constructor: function constructor() {
         var _policies = DEFAULT_POLICIES;
         this.extend({
             addComponent: function addComponent(componentModel) {
-                for (var _len5 = arguments.length, policies = Array(_len5 > 1 ? _len5 - 1 : 0), _key6 = 1; _key6 < _len5; _key6++) {
-                    policies[_key6 - 1] = arguments[_key6];
+                for (var _len = arguments.length, policies = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+                    policies[_key - 1] = arguments[_key];
                 }
 
                 var policyIndex = 0;
-                policies = _policies.concat((0, _mirukenCore.$flatten)(policies, true));
+                policies = _policies.concat($flatten(policies, true));
                 while (policyIndex < policies.length) {
                     var _policy = policies[policyIndex++];
-                    if ((0, _mirukenCore.$isFunction)(_policy.applyPolicy)) {
+                    if ($isFunction(_policy.applyPolicy)) {
                         _policy.applyPolicy(componentModel, policies);
                     }
                 }
-                var validation = (0, _mirukenValidate.Validator)(_mirukenCallback.$composer).validate(componentModel);
+                var validation = Validator($composer).validate(componentModel);
                 if (!validation.valid) {
                     throw new ComponentModelError(componentModel, validation);
                 }
                 return this.registerHandler(componentModel, policies);
             },
             addPolicies: function addPolicies() {
-                for (var _len6 = arguments.length, policies = Array(_len6), _key7 = 0; _key7 < _len6; _key7++) {
-                    policies[_key7] = arguments[_key7];
+                for (var _len2 = arguments.length, policies = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+                    policies[_key2] = arguments[_key2];
                 }
 
-                policies = (0, _mirukenCore.$flatten)(policies, true);
+                policies = $flatten(policies, true);
                 if (policies.length > 0) {
                     _policies = _policies.concat(policies);
                 }
@@ -1259,14 +1250,14 @@ var IoContainer = exports.IoContainer = _mirukenCallback.Handler.extend(Containe
         });
     },
     register: function register() {
-        var _this5 = this;
+        var _this2 = this;
 
-        for (var _len7 = arguments.length, registrations = Array(_len7), _key8 = 0; _key8 < _len7; _key8++) {
-            registrations[_key8] = arguments[_key8];
+        for (var _len3 = arguments.length, registrations = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
+            registrations[_key3] = arguments[_key3];
         }
 
-        return (0, _mirukenCore.$flatten)(registrations, true).map(function (registration) {
-            return registration.register(_this5, _mirukenCallback.$composer);
+        return $flatten(registrations, true).map(function (registration) {
+            return registration.register(_this2, $composer);
         });
     },
     registerHandler: function registerHandler(componentModel, policies) {
@@ -1275,56 +1266,56 @@ var IoContainer = exports.IoContainer = _mirukenCallback.Handler.extend(Containe
             lifestyle = componentModel.lifestyle || new SingletonLifestyle(),
             factory = componentModel.factory,
             burden = componentModel.burden;
-        key = componentModel.invariant ? (0, _mirukenCore.$eq)(key) : key;
+        key = componentModel.invariant ? $eq(key) : key;
         return _registerHandler(this, key, type, lifestyle, factory, burden, policies);
     },
     invoke: function invoke(fn, dependencies, ctx) {
-        var inject = fn.$inject || fn.inject;
+        var inject$$1 = fn.$inject || fn.inject;
         var manager = new DependencyManager(dependencies);
-        if (inject) {
-            if ((0, _mirukenCore.$isFunction)(inject)) {
-                inject = inject();
+        if (inject$$1) {
+            if ($isFunction(inject$$1)) {
+                inject$$1 = inject$$1();
             }
-            manager.merge(inject);
+            manager.merge(inject$$1);
         }
         dependencies = manager.getItems();
         if (dependencies.length > 0) {
             var burden = { d: dependencies },
-                deps = _resolveBurden(burden, true, null, _mirukenCallback.$composer);
+                deps = _resolveBurden(burden, true, null, $composer);
             return fn.apply(ctx, deps.d);
         }
         return fn();
     },
     dispose: function dispose() {
-        _mirukenCallback.$provide.removeAll(this);
+        $provide.removeAll(this);
     }
 });
 
 function _registerHandler(container, key, type, lifestyle, factory, burden, policies) {
-    return (0, _mirukenCallback.$provide)(container, key, function handler(resolution, composer) {
+    return $provide(container, key, function handler(resolution, composer) {
         if (!(resolution instanceof DependencyResolution)) {
             resolution = new DependencyResolution(resolution.key);
         }
         if (!resolution.claim(handler, type)) {
-            return _mirukenCallback.$unhandled;
+            return $unhandled;
         }
         policies = policies.concat(InitializationPolicy);
         return lifestyle.resolve(function (configure) {
-            var instant = _mirukenCore.$instant.test(resolution.key),
+            var instant = $instant.test(resolution.key),
                 dependencies = _resolveBurden(burden, instant, resolution, composer);
-            return (0, _mirukenCore.$isPromise)(dependencies) ? dependencies.then(createComponent) : createComponent(dependencies);
+            return $isPromise(dependencies) ? dependencies.then(createComponent) : createComponent(dependencies);
             function createComponent(dependencies) {
                 var component = factory.call(composer, dependencies);
-                if ((0, _mirukenCore.$isFunction)(configure)) {
+                if ($isFunction(configure)) {
                     component = configure(component, dependencies) || component;
                 }
                 return applyPolicies(0);
                 function applyPolicies(index) {
                     var _loop = function _loop(i) {
-                        var policy = policies[i];
-                        if ((0, _mirukenCore.$isFunction)(policy.componentCreated)) {
-                            var result = policy.componentCreated(component, dependencies, composer);
-                            if ((0, _mirukenCore.$isPromise)(result)) {
+                        var policy$$1 = policies[i];
+                        if ($isFunction(policy$$1.componentCreated)) {
+                            var result = policy$$1.componentCreated(component, dependencies, composer);
+                            if ($isPromise(result)) {
                                 return {
                                     v: result.then(function () {
                                         return applyPolicies(i + 1);
@@ -1335,9 +1326,9 @@ function _registerHandler(container, key, type, lifestyle, factory, burden, poli
                     };
 
                     for (var i = index; i < policies.length; ++i) {
-                        var _ret11 = _loop(i);
+                        var _ret4 = _loop(i);
 
-                        if ((typeof _ret11 === 'undefined' ? 'undefined' : _typeof(_ret11)) === "object") return _ret11.v;
+                        if ((typeof _ret4 === "undefined" ? "undefined" : _typeof$1(_ret4)) === "object") return _ret4.v;
                     }
                     return component;
                 }
@@ -1353,15 +1344,15 @@ function _resolveBurden(burden, instant, resolution, composer) {
 
     var _loop2 = function _loop2(key) {
         var group = burden[key];
-        if ((0, _mirukenCore.$isNothing)(group)) {
-            return 'continue';
+        if ($isNothing(group)) {
+            return "continue";
         }
         var resolved = group.slice();
 
         var _loop3 = function _loop3(index) {
             var dep = resolved[index];
             if (dep === undefined) {
-                return 'continue';
+                return "continue";
             }
             var use = dep.test(DependencyModifier.Use),
                 lazy = dep.test(DependencyModifier.Lazy),
@@ -1369,8 +1360,8 @@ function _resolveBurden(burden, instant, resolution, composer) {
                 child = dep.test(DependencyModifier.Child),
                 dynamic = dep.test(DependencyModifier.Dynamic);
             var dependency = dep.dependency;
-            if (use || dynamic || (0, _mirukenCore.$isNothing)(dependency)) {
-                if (dynamic && (0, _mirukenCore.$isFunction)(dependency)) {
+            if (use || dynamic || $isNothing(dependency)) {
+                if (dynamic && $isFunction(dependency)) {
                     dependency = dependency(containerDep);
                 }
                 if (child) {
@@ -1390,10 +1381,10 @@ function _resolveBurden(burden, instant, resolution, composer) {
                         invariant = dep.test(DependencyModifier.Invariant),
                         fromContainer = dep.test(DependencyModifier.Container);
                     if (invariant) {
-                        dependency = (0, _mirukenCore.$eq)(dependency);
+                        dependency = $eq(dependency);
                     }
                     if (instant) {
-                        dependency = (0, _mirukenCore.$instant)(dependency);
+                        dependency = $instant(dependency);
                     }
                     if (lazy) {
                         dependency = function (paramDep, created, param) {
@@ -1410,7 +1401,7 @@ function _resolveBurden(burden, instant, resolution, composer) {
                         var paramDep = new DependencyResolution(dependency, resolution, all),
                             container = fromContainer ? containerDep : composer;
                         dependency = _resolveDependency(paramDep, !optional, promise, child, all, container);
-                        if (!promise && (0, _mirukenCore.$isPromise)(dependency)) {
+                        if (!promise && $isPromise(dependency)) {
                             promises.push(dependency);
                             dependency.then(function (param) {
                                 return resolved[index] = param;
@@ -1423,17 +1414,17 @@ function _resolveBurden(burden, instant, resolution, composer) {
         };
 
         for (var index = 0; index < resolved.length; ++index) {
-            var _ret13 = _loop3(index);
+            var _ret6 = _loop3(index);
 
-            if (_ret13 === 'continue') continue;
+            if (_ret6 === "continue") continue;
         }
         dependencies[key] = resolved;
     };
 
     for (var key in burden) {
-        var _ret12 = _loop2(key);
+        var _ret5 = _loop2(key);
 
-        if (_ret12 === 'continue') continue;
+        if (_ret5 === "continue") continue;
     }
     if (promises.length === 1) {
         return promises[0].then(function () {
@@ -1452,7 +1443,7 @@ function _resolveDependency(dependency, required, promise, child, all, composer)
     if (result === undefined) {
         if (required) {
             var error = new DependencyResolutionError(dependency);
-            if (_mirukenCore.$instant.test(dependency.key)) {
+            if ($instant.test(dependency.key)) {
                 throw error;
             }
             return Promise.reject(error);
@@ -1460,14 +1451,16 @@ function _resolveDependency(dependency, required, promise, child, all, composer)
         return result;
     }
     if (child && !all) {
-        result = (0, _mirukenCore.$isPromise)(result) ? result.then(_createChild) : _createChild(result);
+        result = $isPromise(result) ? result.then(_createChild) : _createChild(result);
     }
     return promise ? Promise.resolve(result) : result;
 }
 
 function _createChild(parent) {
-    if (!(parent && (0, _mirukenCore.$isFunction)(parent.newChild))) {
-        throw new Error('Child dependency requested, but ' + parent + ' is not a parent.');
+    if (!(parent && $isFunction(parent.newChild))) {
+        throw new Error("Child dependency requested, but " + parent + " is not a parent.");
     }
     return parent.newChild();
 }
+
+export { ComponentModel, ComponentBuilder, InterceptorBuilder, $component, ComponentModelError, Registration, Container, $$composer, $container, DependencyModifier, DependencyModel, DependencyManager, DependencyResolution, DependencyResolutionError, Installer, FromBuilder, FromPackageBuilder, BasedOnBuilder, KeyBuilder, $classes, ConstructorPolicy, PropertyInjectionPolicy, PolicyMetadataPolicy, IoContainer, Lifestyle, TransientLifestyle, SingletonLifestyle, ContextualLifestyle, ComponentPolicy, policy };

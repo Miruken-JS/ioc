@@ -1,4 +1,5 @@
-define(['exports', 'miruken-core', 'miruken-context', 'miruken-validate', 'miruken-callback'], function (exports, mirukenCore, mirukenContext, mirukenValidate, mirukenCallback) { 'use strict';
+(function (exports,mirukenCore,mirukenContext,mirukenValidate,mirukenCallback) {
+'use strict';
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
@@ -1491,6 +1492,4 @@ exports.ContextualLifestyle = ContextualLifestyle;
 exports.ComponentPolicy = ComponentPolicy;
 exports.policy = policy;
 
-Object.defineProperty(exports, '__esModule', { value: true });
-
-});
+}((this.miruken-ioc = this.miruken-ioc || {}),mirukenCore,mirukenContext,mirukenValidate,mirukenCallback));
