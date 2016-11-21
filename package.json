@@ -23,7 +23,7 @@
     },
     "dependencies": {
       "miruken-callback": "^0.0.1",
-      "miruken-context": "^0.0.1",
+      "miruken-context": "0.0.2",
       "miruken-core": "^0.0.1",
       "miruken-validate": "^0.0.1"
     },
@@ -31,7 +31,12 @@
       "chai": "^3.5.0"
     }
   },
-  "dependencies": {},
+  "dependencies": {
+    "miruken-callback": "0.0.1",
+    "miruken-context": "0.0.2",
+    "miruken-core": "0.0.1",
+    "miruken-validate": "0.0.1"
+  },
   "devDependencies": {
     "babel-cli": "^6.16.0",
     "babel-core": "^6.16.0",

@@ -13,7 +13,7 @@ System.config({
     "chai": "npm:chai@3.5.0",
     "core-js": "npm:core-js@1.2.7",
     "miruken-callback": "npm:miruken-callback@0.0.1",
-    "miruken-context": "npm:miruken-context@0.0.1",
+    "miruken-context": "npm:miruken-context@0.0.2",
     "miruken-core": "npm:miruken-core@0.0.1",
     "miruken-validate": "npm:miruken-validate@0.0.1",
     "reflect-metadata": "npm:reflect-metadata@0.1.8",
@@ -281,6 +281,10 @@ System.config({
       "miruken-core": "npm:miruken-core@0.0.1"
     },
     "npm:miruken-context@0.0.1": {
+      "miruken-callback": "npm:miruken-callback@0.0.1",
+      "miruken-core": "npm:miruken-core@0.0.1"
+    },
+    "npm:miruken-context@0.0.2": {
       "miruken-callback": "npm:miruken-callback@0.0.1",
       "miruken-core": "npm:miruken-core@0.0.1"
     },
