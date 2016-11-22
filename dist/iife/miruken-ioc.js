@@ -1492,4 +1492,4 @@ exports.ContextualLifestyle = ContextualLifestyle;
 exports.ComponentPolicy = ComponentPolicy;
 exports.policy = policy;
 
-}((this.miruken-ioc = this.miruken-ioc || {}),mirukenCore,mirukenContext,mirukenValidate,mirukenCallback));
+}((this.mirukenIoc = this.mirukenIoc || {}),mirukenCore,mirukenContext,mirukenValidate,mirukenCallback));
