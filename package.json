@@ -1,6 +1,6 @@
 {
   "name": "miruken-ioc",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "registry": "npm",
   "description": "Provides dependency injection and inversion-of-control",
   "keywords": [
