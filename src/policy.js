@@ -21,11 +21,12 @@ export const ComponentPolicy = Protocol.extend({
     /**
      * Notifies the creation of a component.
      * @method componentCreated
-     * @param  {Object}   component     -  component instance
-     * @param  {Object}   dependencies  -  resolved dependencies
-     * @param  {Handler}  composer      -  composition handler
+     * @param  {Object}         component       -  component instance
+     * @param  {ComponentModel} componentModel  -  component model
+     * @param  {Object}         dependencies    -  resolved dependencies
+     * @param  {Handler}        composer        -  composition handler
      */        
-    componentCreated(component, dependencies, composer) {}
+    componentCreated(component, componentModel, dependencies, composer) {}
 });
 
 /**

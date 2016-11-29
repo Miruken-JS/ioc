@@ -151,12 +151,13 @@ export const ContextualLifestyle = Lifestyle.extend({
                 ContextualHelper.bindContext(instance, context, true);
                 return instance.extend({
                     set context(value) {
+                        if (value == context) { return; }
                         if (value == null) {
-                            this.base(null);
+                            this.base(value);
                             lifestyle.disposeInstance(instance);
-                        } else if (value !== context) {
-                            throw new Error("Container managed instances cannot change context");
+                            return;
                         }
+                        throw new Error("Container managed instances cannot change context");
                     }
                 });
             },

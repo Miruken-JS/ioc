@@ -1,12 +1,12 @@
 import {
-    Base, Policy, inject, design, getPropertyDescriptors,
-    $isNothing, $isSomething, $isFunction,
-    $isPromise, $eq, $optional, $every,
+    Base, Protocol, Policy, inject, design,
+    getPropertyDescriptors, $isNothing, $isSomething,
+    $isFunction, $isPromise, $eq, $optional, $every,
     $instant, $flatten
 } from "miruken-core";
 
 import {
-    Handler, $provide, $composer, $unhandled
+    Handler, Resolution, $provide, $composer, $unhandled
 } from "miruken-callback";
 
 import { Validator } from "miruken-validate";
@@ -96,7 +96,7 @@ export const PropertyInjectionPolicy = Policy.extend(ComponentPolicy, {
             }
         });
     },
-    componentCreated(component, dependencies) {
+    componentCreated(component, componentModel, dependencies) {
         Reflect.ownKeys(dependencies).forEach(key => {
             if ($isFunction(key.startsWith) && key.startsWith("property:")) {
                 const dependency = dependencies[key][0];
@@ -107,6 +107,46 @@ export const PropertyInjectionPolicy = Policy.extend(ComponentPolicy, {
             }
         });
     }
+});
+
+/**
+ * Marker Protocol for injecting {{#crossLink ComponentModel"}}{{/crossLink}}.
+ * @class ComponentModelAware
+ * @extends Protocol
+ */
+export const ComponentModelAware = Protocol.extend({
+    set componentModel(value) {}
+});
+
+/**
+ * Injects {{#crossLink "ComponentModel"}}{{/crossLink}} into components.
+ * @class ComponentModelAwarePolicy
+ * @uses ComponentPolicy
+ * @extends Policy
+ */
+export const ComponentModelAwarePolicy = Policy.extend(ComponentPolicy, {
+    constructor(implicit) {
+        this.extend({
+            componentCreated(component, componentModel) {
+                if (!implicit || ComponentModelAware.isAdoptedBy(component)) {
+                    component.componentModel = componentModel;
+                }
+            }        
+        });
+    }
+});
+Object.defineProperties(ComponentModelAwarePolicy, {
+    /**
+     * Policy assigns ComponentModel to every instance conforming 
+     * to the {{#crossLink "ComponentModelAware"}}{{/crossLink}} protocol.
+     * @property {ComponentModelAwarePolicy} Implicit
+     */    
+    Implicit: { value: new ComponentModelAwarePolicy(true) },
+    /**
+     * Policy assigns ComponentModel to every related instance. 
+     * @property {ComponentModelAwarePolicy} Explicit
+     */    
+    Explicit: { value: new ComponentModelAwarePolicy(false) }
 });
 
 /**
@@ -134,7 +174,11 @@ const InitializationPolicy = new (Policy.extend(ComponentPolicy, {
 }));
 
 
-const DEFAULT_POLICIES = [ new ConstructorPolicy(), new PolicyMetadataPolicy() ];
+const DEFAULT_POLICIES = [
+    new ConstructorPolicy(),
+    ComponentModelAwarePolicy.Implicit,
+    new PolicyMetadataPolicy()
+];
 
 /**
  * Default Inversion of Control {{#crossLink "Container"}}{{/crossLink}}.
@@ -170,18 +214,24 @@ export const IoContainer = Handler.extend(Container, {
             }                
         })
     },
+    resolve(key) {
+        const resolution = (key instanceof Resolution) ? key : new Resolution(key);
+        if (this.handle(resolution, false, $composer)) {
+            return resolution.callbackResult;
+        }
+    },
+    resolveAll(key) {
+        const resolution = (key instanceof Resolution) ? key : new Resolution(key, true);
+        return this.handle(resolution, true, $composer)
+             ? resolution.callbackResult
+             : [];
+    },    
     register(...registrations) {
         return $flatten(registrations, true).map(
             registration => registration.register(this, $composer));
     },
     registerHandler(componentModel, policies) {
-        let   key       = componentModel.key;
-        const type      = componentModel.implementation,
-              lifestyle = componentModel.lifestyle || new SingletonLifestyle(),
-              factory   = componentModel.factory,
-              burden    = componentModel.burden;
-        key = componentModel.invariant ? $eq(key) : key;
-        return _registerHandler(this, key, type, lifestyle, factory, burden, policies); 
+        return _registerHandler(componentModel, this, policies); 
     },
     invoke(fn, dependencies, ctx) {
         let   inject  = fn.$inject || fn.inject;
@@ -205,7 +255,13 @@ export const IoContainer = Handler.extend(Container, {
     }
 });
 
-function _registerHandler(container, key, type, lifestyle, factory, burden, policies) {
+function _registerHandler(componentModel, container, policies) {
+    let   key       = componentModel.key;
+    const type      = componentModel.implementation,
+          lifestyle = componentModel.lifestyle || new SingletonLifestyle(),
+          factory   = componentModel.factory,
+          burden    = componentModel.burden;
+    key = componentModel.invariant ? $eq(key) : key;    
     return $provide(container, key, function handler(resolution, composer) {
         if (!(resolution instanceof DependencyResolution)) {
             resolution = new DependencyResolution(resolution.key);
@@ -230,7 +286,8 @@ function _registerHandler(container, key, type, lifestyle, factory, burden, poli
                     for (let i = index; i < policies.length; ++i) {
                         const policy = policies[i];
                         if ($isFunction(policy.componentCreated)) {
-                            const result = policy.componentCreated(component, dependencies, composer);
+                            const result = policy.componentCreated(
+                                component, componentModel, dependencies, composer);
                             if ($isPromise(result)) {
                                 return result.then(() => applyPolicies(i + 1));
                             }

@@ -7,7 +7,7 @@ var policyMetadataKey = Symbol();
 
 var ComponentPolicy = mirukenCore.Protocol.extend({
     applyPolicy: function applyPolicy(componentModel, policies) {},
-    componentCreated: function componentCreated(component, dependencies, composer) {}
+    componentCreated: function componentCreated(component, componentModel, dependencies, composer) {}
 });
 
 var policy = mirukenCore.Metadata.decorator(policyMetadataKey, function (target, key, descriptor, policies) {
@@ -146,12 +146,15 @@ var ContextualLifestyle = Lifestyle.extend({
                 mirukenContext.ContextualHelper.bindContext(instance, context, true);
                 return instance.extend({
                     set context(value) {
-                        if (value == null) {
-                            this.base(null);
-                            lifestyle.disposeInstance(instance);
-                        } else if (value !== context) {
-                            throw new Error("Container managed instances cannot change context");
+                        if (value == context) {
+                            return;
                         }
+                        if (value == null) {
+                            this.base(value);
+                            lifestyle.disposeInstance(instance);
+                            return;
+                        }
+                        throw new Error("Container managed instances cannot change context");
                     }
                 });
             },
@@ -1175,7 +1178,7 @@ var PropertyInjectionPolicy = mirukenCore.Policy.extend(ComponentPolicy, {
             }
         });
     },
-    componentCreated: function componentCreated(component, dependencies) {
+    componentCreated: function componentCreated(component, componentModel, dependencies) {
         Reflect.ownKeys(dependencies).forEach(function (key) {
             if (mirukenCore.$isFunction(key.startsWith) && key.startsWith("property:")) {
                 var dependency = dependencies[key][0];
@@ -1186,6 +1189,27 @@ var PropertyInjectionPolicy = mirukenCore.Policy.extend(ComponentPolicy, {
             }
         });
     }
+});
+
+var ComponentModelAware = mirukenCore.Protocol.extend({
+    set componentModel(value) {}
+});
+
+var ComponentModelAwarePolicy = mirukenCore.Policy.extend(ComponentPolicy, {
+    constructor: function constructor(implicit) {
+        this.extend({
+            componentCreated: function componentCreated(component, componentModel) {
+                if (!implicit || ComponentModelAware.isAdoptedBy(component)) {
+                    component.componentModel = componentModel;
+                }
+            }
+        });
+    }
+});
+Object.defineProperties(ComponentModelAwarePolicy, {
+    Implicit: { value: new ComponentModelAwarePolicy(true) },
+
+    Explicit: { value: new ComponentModelAwarePolicy(false) }
 });
 
 var PolicyMetadataPolicy = mirukenCore.Policy.extend(ComponentPolicy, {
@@ -1210,7 +1234,7 @@ var InitializationPolicy = new (mirukenCore.Policy.extend(ComponentPolicy, {
     }
 }))();
 
-var DEFAULT_POLICIES = [new ConstructorPolicy(), new PolicyMetadataPolicy()];
+var DEFAULT_POLICIES = [new ConstructorPolicy(), ComponentModelAwarePolicy.Implicit, new PolicyMetadataPolicy()];
 
 var IoContainer = mirukenCallback.Handler.extend(Container, {
     constructor: function constructor() {
@@ -1247,6 +1271,16 @@ var IoContainer = mirukenCallback.Handler.extend(Container, {
             }
         });
     },
+    resolve: function resolve(key) {
+        var resolution = key instanceof mirukenCallback.Resolution ? key : new mirukenCallback.Resolution(key);
+        if (this.handle(resolution, false, mirukenCallback.$composer)) {
+            return resolution.callbackResult;
+        }
+    },
+    resolveAll: function resolveAll(key) {
+        var resolution = key instanceof mirukenCallback.Resolution ? key : new mirukenCallback.Resolution(key, true);
+        return this.handle(resolution, true, mirukenCallback.$composer) ? resolution.callbackResult : [];
+    },
     register: function register() {
         var _this2 = this;
 
@@ -1259,13 +1293,7 @@ var IoContainer = mirukenCallback.Handler.extend(Container, {
         });
     },
     registerHandler: function registerHandler(componentModel, policies) {
-        var key = componentModel.key;
-        var type = componentModel.implementation,
-            lifestyle = componentModel.lifestyle || new SingletonLifestyle(),
-            factory = componentModel.factory,
-            burden = componentModel.burden;
-        key = componentModel.invariant ? mirukenCore.$eq(key) : key;
-        return _registerHandler(this, key, type, lifestyle, factory, burden, policies);
+        return _registerHandler(componentModel, this, policies);
     },
     invoke: function invoke(fn, dependencies, ctx) {
         var inject$$1 = fn.$inject || fn.inject;
@@ -1289,7 +1317,13 @@ var IoContainer = mirukenCallback.Handler.extend(Container, {
     }
 });
 
-function _registerHandler(container, key, type, lifestyle, factory, burden, policies) {
+function _registerHandler(componentModel, container, policies) {
+    var key = componentModel.key;
+    var type = componentModel.implementation,
+        lifestyle = componentModel.lifestyle || new SingletonLifestyle(),
+        factory = componentModel.factory,
+        burden = componentModel.burden;
+    key = componentModel.invariant ? mirukenCore.$eq(key) : key;
     return mirukenCallback.$provide(container, key, function handler(resolution, composer) {
         if (!(resolution instanceof DependencyResolution)) {
             resolution = new DependencyResolution(resolution.key);
@@ -1312,7 +1346,7 @@ function _registerHandler(container, key, type, lifestyle, factory, burden, poli
                     var _loop = function _loop(i) {
                         var policy$$1 = policies[i];
                         if (mirukenCore.$isFunction(policy$$1.componentCreated)) {
-                            var result = policy$$1.componentCreated(component, dependencies, composer);
+                            var result = policy$$1.componentCreated(component, componentModel, dependencies, composer);
                             if (mirukenCore.$isPromise(result)) {
                                 return {
                                     v: result.then(function () {
@@ -1483,6 +1517,8 @@ exports.KeyBuilder = KeyBuilder;
 exports.$classes = $classes;
 exports.ConstructorPolicy = ConstructorPolicy;
 exports.PropertyInjectionPolicy = PropertyInjectionPolicy;
+exports.ComponentModelAware = ComponentModelAware;
+exports.ComponentModelAwarePolicy = ComponentModelAwarePolicy;
 exports.PolicyMetadataPolicy = PolicyMetadataPolicy;
 exports.IoContainer = IoContainer;
 exports.Lifestyle = Lifestyle;

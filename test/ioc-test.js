@@ -26,7 +26,8 @@ import {
 import { TransientLifestyle } from "../src/lifestyle";
 import { Container } from "../src/container";
 import {
-    IoContainer, PropertyInjectionPolicy
+    IoContainer, PropertyInjectionPolicy,
+    ComponentModelAware,  ComponentModelAwarePolicy
 } from "../src/ioc";
 
 import { expect } from "chai";
@@ -1030,7 +1031,27 @@ describe("IoContainer", () => {
                 done();
             });
         });        
-        
+
+        it("should set ComponentModel explicitly", done => {
+            container.register($component(car.V12)
+                               .policies(ComponentModelAwarePolicy.Explicit));
+            Promise.resolve(container.resolve(car.Engine)).then(engine => {
+                expect(engine.componentModel).to.be.defined;
+                expect(engine.componentModel.implementation).to.equal(car.V12);
+                done();
+            });            
+        });
+
+        it("should set ComponentModel implicitly", done => {
+            var Controller = Base.extend(ComponentModelAware);
+            container.register($component(Controller));
+            Promise.resolve(container.resolve(Controller)).then(controller => {
+                expect(controller.componentModel).to.be.defined;
+                expect(controller.componentModel.implementation).to.equal(Controller);
+                done();
+            });            
+        });
+                
         it("should apply policies after creation", done => {
             container.register($component(car.V12).policies(new Policy1(), new Policy2(), new Policy3()));
             Promise.resolve(container.resolve(car.Engine)).then(engine => {
