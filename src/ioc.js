@@ -215,13 +215,15 @@ export const IoContainer = Handler.extend(Container, {
         })
     },
     resolve(key) {
-        const resolution = (key instanceof Resolution) ? key : new Resolution(key);
+        const resolution = key instanceof Resolution ? key
+                         : new DependencyResolution(key);
         if (this.handle(resolution, false, $composer)) {
             return resolution.callbackResult;
         }
     },
     resolveAll(key) {
-        const resolution = (key instanceof Resolution) ? key : new Resolution(key, true);
+        const resolution = key instanceof Resolution ? key
+                         : new DependencyResolution(key, null, true);
         return this.handle(resolution, true, $composer)
              ? resolution.callbackResult
              : [];
