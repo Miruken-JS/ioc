@@ -974,7 +974,7 @@ describe("IoContainer", () => {
                 });
             container.register($component(Registry));
             Promise.resolve(container.resolve(Registry)).then(registry => {
-                expect($decorated(registry.composer)).to.equal(context);
+                expect($decorated(registry.composer, true)).to.equal(context);
                 Promise.resolve(Validator(registry.composer).validate(registry))
                     .then(validation => {
                         expect(validation.valid).to.be.true;
@@ -1211,7 +1211,7 @@ describe("IoContainer", () => {
         it("should fail invocation if component not found", () => {
             expect(() => {
                 car.Engine(context).rev(4000);                
-            }).to.throw(Error, /has no method 'rev'/);
+            }).to.throw(Error, /rev could not be handled/);
         });
 
         it("should use design metadata to infer dependencies", done => {

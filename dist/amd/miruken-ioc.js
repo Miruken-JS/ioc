@@ -148,12 +148,12 @@ var ContextualLifestyle = Lifestyle.extend({
                         if (value == context) {
                             return;
                         }
-                        if (value == null) {
-                            this.base(value);
-                            lifestyle.disposeInstance(instance);
-                            return;
+                        if (value != null) {
+                            throw new Error("Container managed instances cannot change context");
                         }
-                        throw new Error("Container managed instances cannot change context");
+                        this.base(value);
+                        lifestyle.disposeInstance(instance);
+                        return;
                     }
                 });
             },
@@ -1271,13 +1271,13 @@ var IoContainer = mirukenCallback.Handler.extend(Container, {
         });
     },
     resolve: function resolve(key) {
-        var resolution = key instanceof mirukenCallback.Resolution ? key : new mirukenCallback.Resolution(key);
+        var resolution = key instanceof mirukenCallback.Resolution ? key : new DependencyResolution(key);
         if (this.handle(resolution, false, mirukenCallback.$composer)) {
             return resolution.callbackResult;
         }
     },
     resolveAll: function resolveAll(key) {
-        var resolution = key instanceof mirukenCallback.Resolution ? key : new mirukenCallback.Resolution(key, true);
+        var resolution = key instanceof mirukenCallback.Resolution ? key : new DependencyResolution(key, null, true);
         return this.handle(resolution, true, mirukenCallback.$composer) ? resolution.callbackResult : [];
     },
     register: function register() {

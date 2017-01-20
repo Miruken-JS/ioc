@@ -151,12 +151,12 @@ var ContextualLifestyle = Lifestyle.extend({
                         if (value == context) {
                             return;
                         }
-                        if (value == null) {
-                            this.base(value);
-                            lifestyle.disposeInstance(instance);
-                            return;
+                        if (value != null) {
+                            throw new Error("Container managed instances cannot change context");
                         }
-                        throw new Error("Container managed instances cannot change context");
+                        this.base(value);
+                        lifestyle.disposeInstance(instance);
+                        return;
                     }
                 });
             },
@@ -1274,13 +1274,13 @@ var IoContainer = Handler.extend(Container, {
         });
     },
     resolve: function resolve(key) {
-        var resolution = key instanceof Resolution ? key : new Resolution(key);
+        var resolution = key instanceof Resolution ? key : new DependencyResolution(key);
         if (this.handle(resolution, false, $composer)) {
             return resolution.callbackResult;
         }
     },
     resolveAll: function resolveAll(key) {
-        var resolution = key instanceof Resolution ? key : new Resolution(key, true);
+        var resolution = key instanceof Resolution ? key : new DependencyResolution(key, null, true);
         return this.handle(resolution, true, $composer) ? resolution.callbackResult : [];
     },
     register: function register() {
