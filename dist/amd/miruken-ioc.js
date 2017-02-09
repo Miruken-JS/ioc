@@ -309,7 +309,7 @@ var Registration = mirukenCore.Protocol.extend({
   register: function register(container, composer) {}
 });
 
-var Container = mirukenCore.StrictProtocol.extend(mirukenCore.Invoking, mirukenCore.Disposing, {
+var Container = mirukenCore.Protocol.extend(mirukenCore.Invoking, mirukenCore.Disposing, {
   register: function register(registrations) {},
   addComponent: function addComponent(componentModel, policies) {},
   addPolicies: function addPolicies(policies) {},

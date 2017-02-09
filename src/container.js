@@ -1,5 +1,5 @@
 import {
-    Protocol, StrictProtocol, Invoking, Disposing
+    Protocol, Invoking, Disposing
 } from "miruken-core";
 
 /**
@@ -21,11 +21,11 @@ export const Registration = Protocol.extend({
 /**
  * Protocol for exposing container capabilities.
  * @class Container
- * @extends StrictProtocol
+ * @extends Protocol
  * @uses Invoking
  * @uses Disposing
  */            
-export const Container = StrictProtocol.extend(Invoking, Disposing, {
+export const Container = Protocol.extend(Invoking, Disposing, {
     /**
      * Registers components in the container.
      * @method register

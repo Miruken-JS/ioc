@@ -1,4 +1,4 @@
-import { $child, $createModifier, $decorate, $eq, $eval, $every, $flatten, $instant, $isClass, $isFunction, $isNothing, $isPromise, $isProtocol, $isSomething, $lazy, $optional, $promise, $protocols, $use, Abstract, ArrayManager, Base, Disposing, DisposingMixin, Facet, Flags, Invoking, Metadata, Modifier, Policy, Protocol, ProxyBuilder, StrictProtocol, design, emptyArray, getPropertyDescriptors, inject, isDescriptor } from 'miruken-core';
+import { $child, $createModifier, $decorate, $eq, $eval, $every, $flatten, $instant, $isClass, $isFunction, $isNothing, $isPromise, $isProtocol, $isSomething, $lazy, $optional, $promise, $protocols, $use, Abstract, ArrayManager, Base, Disposing, DisposingMixin, Facet, Flags, Invoking, Metadata, Modifier, Policy, Protocol, ProxyBuilder, design, emptyArray, getPropertyDescriptors, inject, isDescriptor } from 'miruken-core';
 import { Context, ContextualHelper, ContextualMixin } from 'miruken-context';
 import { Validator, validateThat } from 'miruken-validate';
 import { $composer, $provide, $unhandled, Handler, Resolution } from 'miruken-callback';
@@ -312,7 +312,7 @@ var Registration = Protocol.extend({
   register: function register(container, composer) {}
 });
 
-var Container = StrictProtocol.extend(Invoking, Disposing, {
+var Container = Protocol.extend(Invoking, Disposing, {
   register: function register(registrations) {},
   addComponent: function addComponent(componentModel, policies) {},
   addPolicies: function addPolicies(policies) {},
