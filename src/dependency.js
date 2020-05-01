@@ -223,7 +223,8 @@ export const DependencyResolution = Resolution.extend({
                      : display;
             }
         });
-    }
+    },
+    acceptPromise(promise) { return promise; }
 });
 
 /**

@@ -1,15 +1,13 @@
 import {
-    Base, Protocol, Policy, inject, design,
+    Base, Protocol, Options, inject, design,
     getPropertyDescriptors, $isNothing, $isSomething,
-    $isFunction, $isPromise, $eq, $optional, $every,
-    $instant, $flatten
+    $isFunction, $isPromise, $decorated, $eq, $optional,
+    $every, $instant, $flatten
 } from "miruken-core";
 
 import {
     Handler, Resolution, $provide, $composer, $unhandled
 } from "miruken-callback";
-
-import { Validator } from "miruken-validate";
 
 import { Container } from "./container";
 import { ComponentPolicy, policy } from "./policy";
@@ -26,9 +24,9 @@ import {
  * Collects constructor dependencies to be injected.
  * @class ConstructorPolicy
  * @uses ComponentPolicy
- * @extends Policy
+ * @extends Options
  */
-export const ConstructorPolicy = Policy.extend(ComponentPolicy, {
+export const ConstructorPolicy = Options.extend(ComponentPolicy, {
     applyPolicy(componentModel) {
         const implementation = componentModel.implementation;
         if (!implementation) { return };
@@ -69,9 +67,9 @@ export const ConstructorPolicy = Policy.extend(ComponentPolicy, {
  * Collects optional property dependencies to be injected.
  * @class PropertyInjectionPolicy
  * @uses ComponentPolicy
- * @extends Policy
+ * @extends Options
  */
-export const PropertyInjectionPolicy = Policy.extend(ComponentPolicy, {
+export const PropertyInjectionPolicy = Options.extend(ComponentPolicy, {
     applyPolicy(componentModel) {
         const implementation = componentModel.implementation;
         if (!implementation) { return };
@@ -122,9 +120,9 @@ export const ComponentModelAware = Protocol.extend({
  * Injects {{#crossLink "ComponentModel"}}{{/crossLink}} into components.
  * @class ComponentModelAwarePolicy
  * @uses ComponentPolicy
- * @extends Policy
+ * @extends Options
  */
-export const ComponentModelAwarePolicy = Policy.extend(ComponentPolicy, {
+export const ComponentModelAwarePolicy = Options.extend(ComponentPolicy, {
     constructor(implicit) {
         this.extend({
             componentCreated(component, componentModel) {
@@ -153,9 +151,9 @@ Object.defineProperties(ComponentModelAwarePolicy, {
  * Expands any Metadata implementation policies to be applied.
  * @class PolicyMetadataPolicy
  * @uses ComponentPolicy
- * @extends Policy
+ * @extends Options
  */
-export const PolicyMetadataPolicy = Policy.extend(ComponentPolicy, {
+export const PolicyMetadataPolicy = Options.extend(ComponentPolicy, {
     applyPolicy(componentModel, policies) {
         const implementation = componentModel.implementation;
         if (implementation) {
@@ -165,7 +163,7 @@ export const PolicyMetadataPolicy = Policy.extend(ComponentPolicy, {
     }
 });
 
-const InitializationPolicy = new (Policy.extend(ComponentPolicy, {
+const InitializationPolicy = new (Options.extend(ComponentPolicy, {
     componentCreated(component) {
         if ($isFunction(component.initialize)) {
             return component.initialize();
@@ -200,7 +198,7 @@ export const IoContainer = Handler.extend(Container, {
                         policy.applyPolicy(componentModel, policies);
                     }
                 }
-                const validation = Validator($composer).validate(componentModel);
+                const validation = $composer.validate(componentModel);
                 if (!validation.valid) {
                     throw new ComponentModelError(componentModel, validation);
                 }
@@ -264,7 +262,7 @@ function _registerHandler(componentModel, container, policies) {
           factory   = componentModel.factory,
           burden    = componentModel.burden;
     key = componentModel.invariant ? $eq(key) : key;    
-    return $provide(container, key, function handler(resolution, composer) {
+    return $provide($decorated(container, true), key, function handler(resolution, composer) {
         if (!(resolution instanceof DependencyResolution)) {
             resolution = new DependencyResolution(resolution.key);
         }
@@ -358,7 +356,7 @@ function _resolveBurden(burden, instant, resolution, composer) {
                             }
                             return param;
                         };
-                    })(dependency);
+                    })(new DependencyResolution(dependency, resolution, all));
                 } else {
                     const paramDep  = new DependencyResolution(dependency, resolution, all),
                           container = fromContainer ? containerDep : composer;
@@ -394,7 +392,9 @@ function _resolveDependency(dependency, required, promise, child, all, composer)
         return result;
     }
     if (child && !all) {
-        result = $isPromise(result) ? result.then(_createChild) : _createChild(result);
+        result = $isPromise(result) 
+               ? result.then(_createChild) 
+               : _createChild(result);
     }
     return promise ? Promise.resolve(result) : result;
 }

@@ -4,7 +4,6 @@ import { $component } from "../src/component";
 import { $classes } from "../src/fluent";
 import { Container } from "../src/container";
 import { IoContainer } from "../src/ioc";
-import { ValidationHandler } from "miruken-validate";
 
 import * as lib from "./fluent-model";
 
@@ -15,7 +14,7 @@ describe("$classes", () => {
     beforeEach(() => {
         context   = new Context();
         container = Container(context);
-        context.addHandlers(new IoContainer(), new ValidationHandler());
+        context.addHandlers(new IoContainer());
     });
 
     describe("#fromPackage", () => {

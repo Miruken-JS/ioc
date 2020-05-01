@@ -9,10 +9,6 @@ import { $provide } from "miruken-callback";
 import { Context, contextual } from "miruken-context";
 
 import {
-    Validator, ValidationHandler
-} from "miruken-validate";
-
-import {
     DependencyModel, DependencyModifier,
     DependencyResolutionError,
     $$composer, $container
@@ -110,7 +106,7 @@ describe("ComponentModel", () => {
     beforeEach(() => {
         context   = new Context;
         container = Container(context);
-        context.addHandlers(new IoContainer(), new ValidationHandler());
+        context.addHandlers(new IoContainer());
     });
 
     describe("#constructor", () => {
@@ -270,7 +266,7 @@ describe("ComponentBuilder", () => {
     beforeEach(() => {
         context   = new Context();
         container = Container(context);
-        context.addHandlers(new IoContainer(), new ValidationHandler());
+        context.addHandlers(new IoContainer());
     });
     
     describe("#constructor", () => {
@@ -331,7 +327,7 @@ describe("SingletonLifestyle", () => {
     describe("#resolve", () => {
         const context   = new Context(),
               container = Container(context);
-        context.addHandlers(new IoContainer(), new ValidationHandler());
+        context.addHandlers(new IoContainer());
         
         it("should resolve same instance for SingletonLifestyle", done => {
             container.register($component(car.V12).singleton());
@@ -347,7 +343,7 @@ describe("SingletonLifestyle", () => {
         it("should dispose instance when unregistered", done => {
             const context   = new Context(),
                   container = Container(context);
-            context.addHandlers(new IoContainer(), new ValidationHandler());
+            context.addHandlers(new IoContainer());
             const unregister = container.register(
                 $component(car.RebuiltV12).singleton(), $component(car.CraigsJunk))[0];
             Promise.all([container.resolve(car.Engine), container.resolve(car.Junkyard)])
@@ -361,7 +357,7 @@ describe("SingletonLifestyle", () => {
         it("should not dispose instance when called directly", done => {
             const context   = new Context(),
                   container = Container(context);
-            context.addHandlers(new IoContainer(), new ValidationHandler());
+            context.addHandlers(new IoContainer());
             Promise.all(container.register($component(car.RebuiltV12),
                                      $component(car.CraigsJunk))).then(() => {
                 Promise.all([container.resolve(car.Engine), container.resolve(car.Junkyard)])
@@ -379,7 +375,7 @@ describe("TransientLifestyle", () => {
     describe("#resolve", () => {
         const context   = new Context(),
               container = Container(context);
-        context.addHandlers(new IoContainer(), new ValidationHandler());
+        context.addHandlers(new IoContainer());
         
         it("should resolve different instance for TransientLifestyle", done => {
             container.register($component(car.V12).transient());
@@ -410,7 +406,7 @@ describe("ContextualLifestyle", () => {
         it("should resolve different instance per context for ContextualLifestyle", done => {
             const context   = new Context(),
                   container = Container(context);
-            context.addHandlers(new IoContainer(), new ValidationHandler());
+            context.addHandlers(new IoContainer());
             container.register($component(car.V12).contextual());
             Promise.all([container.resolve(car.Engine), container.resolve(car.Engine)])
                 .then(([engine1, engine2]) => {
@@ -428,10 +424,10 @@ describe("ContextualLifestyle", () => {
         it("should implicitly satisfy Context dependency", done => {
             const context   = new Context(),
                   container = Container(context);
-            context.addHandlers(new IoContainer(), new ValidationHandler());
+            context.addHandlers(new IoContainer());
             container.register($component(Controller));
             Promise.resolve(container.resolve(Controller)).then(controller => {
-                expect(controller.context).to.equal(context);
+                expect($decorated(controller.context, true)).to.equal(context);
                 done();
             });
         });
@@ -439,10 +435,10 @@ describe("ContextualLifestyle", () => {
         it("should set context after resolved", done => {
             const context   = new Context(),
                   container = Container(context);
-            context.addHandlers(new IoContainer(), new ValidationHandler());
+            context.addHandlers(new IoContainer());
             container.register($component(Controller).contextual().dependsOn([]));
             Promise.resolve(container.resolve(Controller)).then(controller => {
-                expect(controller.context).to.equal(context);
+                expect($decorated(controller.context, true)).to.equal(context);
                 done();
             });
         });
@@ -450,16 +446,16 @@ describe("ContextualLifestyle", () => {
         it("should fulfill child Context dependency", done => {
             const context   = new Context(),
                   container = Container(context);
-            context.addHandlers(new IoContainer(), new ValidationHandler());
+            context.addHandlers(new IoContainer());
             container.register($component(Controller).dependsOn($child(Context)));
             Promise.resolve(container.resolve(Controller)).then(controller => {
-                expect(controller.context.parent).to.equal(context);
+                expect($decorated(controller.context.parent, true)).to.equal(context);
                 done();
             });
         });
 
         it("should resolve nothing if context not available", done => {
-            const container = (new ValidationHandler()).next(new IoContainer);
+            const container = new IoContainer();
             Container(container).register($component(car.V12).contextual());
             Promise.resolve(Container(container).resolve(car.Engine)).then(engine => {
                 expect(engine).to.be.undefined;
@@ -468,7 +464,7 @@ describe("ContextualLifestyle", () => {
         });
 
         it("should reject Context dependency if context not available", done => {
-            const container = (new ValidationHandler()).next(new IoContainer());
+            const container = new IoContainer();
             Container(container).register($component(Controller).dependsOn(Context));
             Promise.resolve(Container(container).resolve(Controller)).catch(error => {
                 expect(error).to.be.instanceof(DependencyResolutionError);
@@ -478,7 +474,7 @@ describe("ContextualLifestyle", () => {
         });
 
         it("should not fail if optional child Context and no context available", done => {
-            const container = (new ValidationHandler()).next(new IoContainer());
+            const container = new IoContainer();
             Container(container).register($component(Controller).dependsOn($optional($child(Context))));
             Promise.resolve(Container(container).resolve(Controller)).then(controller => {
                 done();
@@ -488,7 +484,7 @@ describe("ContextualLifestyle", () => {
         it("should reject changing component Context", done => {
             const context   = new Context(),
                   container = Container(context);
-            context.addHandlers(new IoContainer(), new ValidationHandler());
+            context.addHandlers(new IoContainer());
             container.register($component(Controller).contextual());
             Promise.resolve(container.resolve(Controller)).then(controller => {
                 expect(() => {
@@ -501,7 +497,7 @@ describe("ContextualLifestyle", () => {
         it("should dispose component when Context cleared", done => {
             const context   = new Context(),
                   container = Container(context);
-            context.addHandlers(new IoContainer(), new ValidationHandler());
+            context.addHandlers(new IoContainer());
             container.register($component(Controller).contextual());
             Promise.resolve(container.resolve(Controller)).then(controller => {
                 expect(controller.disposed).to.not.be.true;
@@ -517,7 +513,7 @@ describe("ContextualLifestyle", () => {
         it("should dispose unregistered components", done => {
             const context   = new Context(),
                   container = Container(context);
-            context.addHandlers(new IoContainer(), new ValidationHandler());
+            context.addHandlers(new IoContainer());
             const unregister = container.register(
                 $component(car.RebuiltV12).contextual(), $component(car.CraigsJunk))[0];
             Promise.all([container.resolve(car.Engine), container.resolve(car.Junkyard)])
@@ -531,7 +527,7 @@ describe("ContextualLifestyle", () => {
         it("should dispose components when context ended", done => {
             const context   = new Context(),
                   container = Container(context);
-            context.addHandlers(new IoContainer(), new ValidationHandler());
+            context.addHandlers(new IoContainer());
             Promise.all(container.register($component(car.RebuiltV12).contextual(),
                                      $component(car.CraigsJunk))).then(() => {
                 let   engine, junk;
@@ -551,7 +547,7 @@ describe("ContextualLifestyle", () => {
         it("should not dispose instance when called directly", done => {
             const context   = new Context(),
                   container = Container(context);
-            context.addHandlers(new IoContainer(), new ValidationHandler());
+            context.addHandlers(new IoContainer());
             Promise.all(container.register($component(car.RebuiltV12).contextual(),
                                      $component(car.CraigsJunk))).then(() => {
                 Promise.all([container.resolve(car.Engine), container.resolve(car.Junkyard)])
@@ -591,7 +587,7 @@ describe("IoContainer", () => {
         beforeEach(() => {
             context   = new Context();
             container = Container(context);
-            context.addHandlers(new IoContainer(), new ValidationHandler());
+            context.addHandlers(new IoContainer());
         });
 
         it("should register component from class", () => {
@@ -658,7 +654,7 @@ describe("IoContainer", () => {
         beforeEach(() => {
             context   = new Context();
             container = Container(context);
-            context.addHandlers(new IoContainer(), new ValidationHandler());
+            context.addHandlers(new IoContainer());
         });
         
         it("should apply policies container-wide", done => {
@@ -705,7 +701,7 @@ describe("IoContainer", () => {
         beforeEach(() => {
             context   = new Context();
             container = Container(context);
-            context.addHandlers(new IoContainer(), new ValidationHandler());
+            context.addHandlers(new IoContainer());
         });
 
         it("should resolve component", done => {
@@ -975,7 +971,7 @@ describe("IoContainer", () => {
             container.register($component(Registry));
             Promise.resolve(container.resolve(Registry)).then(registry => {
                 expect($decorated(registry.composer, true)).to.equal(context);
-                Promise.resolve(Validator(registry.composer).validate(registry))
+                Promise.resolve(registry.composer.validate(registry))
                     .then(validation => {
                         expect(validation.valid).to.be.true;
                 });
@@ -986,7 +982,7 @@ describe("IoContainer", () => {
         it("should have opportunity to resolve missing components", done => {
             const context   = new Context(),
                   container = new IoContainer();
-            context.addHandlers(container, new ValidationHandler());
+            context.addHandlers(container);
             $provide(container, car.Car, (resolution, composer) => {
                 return new car.Ferrari("TRS", new car.V12(917, 6.3));
             });
@@ -1073,7 +1069,7 @@ describe("IoContainer", () => {
             container.register($component(Workflow).newInContext());
             Promise.resolve(container.resolve(Workflow)).then(workflow => {
                 expect(workflow).to.be.instanceOf(Workflow);
-                expect(workflow.context).to.equal(context);
+                expect($decorated(workflow.context, true)).to.equal(context);
                 done();
             });
         });
@@ -1091,7 +1087,7 @@ describe("IoContainer", () => {
             Promise.resolve(container.resolve(AssemblyLine)).then(assembleEngine => {
                 expect(assembleEngine).to.be.instanceOf(AssemblyLine);
                 expect(assembleEngine.engine).to.be.instanceOf(car.V12);
-                expect(assembleEngine.context.parent).to.equal(context);
+                expect($decorated(assembleEngine.context.parent, true)).to.equal(context);
                 done();
             });
         });
@@ -1330,7 +1326,7 @@ describe("IoContainer", () => {
         beforeEach(() => {
             context   = new Context();
             container = Container(context);
-            context.addHandlers(new IoContainer(), new ValidationHandler());
+            context.addHandlers(new IoContainer());
         });
 
         it("should resolve all components", done => {
@@ -1354,7 +1350,7 @@ describe("IoContainer", () => {
         beforeEach(() => {
             context   = new Context();
             container = Container(context);
-            context.addHandlers(new IoContainer(), new ValidationHandler());
+            context.addHandlers(new IoContainer());
         });
 
         function jump() {};
@@ -1400,7 +1396,7 @@ describe("IoContainer", () => {
         beforeEach(() => {
             context   = new Context();
             container = Container(context);
-            context.addHandlers(new IoContainer(), new ValidationHandler());
+            context.addHandlers(new IoContainer());
         });
 
         it("should dispose all components", done => {
