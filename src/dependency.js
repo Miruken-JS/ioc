@@ -110,21 +110,21 @@ export const DependencyModel = Base.extend({
             });
             dependency = Modifier.unwrap(dependency);
         }
-        this.extend({
-            /**
-             * Gets the dependency.
-             * @property {Any} dependency
-             * @readOnly
-             */                            
-            get dependency() { return dependency; },
-            /**
-             * Gets the dependency flags.
-             * @property {DependencyModifier} modifiers
-             * @readOnly
-             */                        
-            get modifiers() { return modifiers; }
-        });
+        this._dependency = dependency;
+        this._modifiers  = modifiers;
     },
+    /**
+     * Gets the dependency.
+     * @property {Any} dependency
+     * @readOnly
+     */                            
+    get dependency() { return this._dependency; },
+    /**
+     * Gets the dependency flags.
+     * @property {DependencyModifier} modifiers
+     * @readOnly
+     */                        
+    get modifiers() { return this._modifiers; },   
     /**
      * Tests if the receiving dependency is annotated with the modifier.
      * @method test
@@ -170,61 +170,60 @@ export const DependencyManager = ArrayManager.extend({
  */
 export const DependencyResolution = Resolution.extend({
     constructor(key, parent, many) {
-        let _type, _handler;
         this.base(key, many);
-        this.extend({
-            /**
-             * Marks the handler as claiming the dependency.
-             * @method claim
-             * @param   {Function}  handler  -  dependency handler
-             * @param   {Function}  type     -  dependency type
-             * @returns {boolean} true if claimed, false otherwise.
-             */                            
-            claim(handler, type) { 
-                if (this.isResolvingDependency(handler)) {
-                    return false;
-                }
-                _handler = handler;
-                _type    = type;
-                return true;
-            },
-            /**
-             * Gets the parent dependency
-             * @property {DependencyResolution} parent
-             */
-            get parent() { return parent; },            
-            /**
-             * Gets the component requesting the dependency.
-             * @property {Object} component
-             */
-            get type() { return _type; },
-            /**
-             * Determines if the handler is in the process of resolving a dependency.
-             * @method isResolvingDependency
-             * @param   {Function}  handler  -  dependency handler
-             * @returns {boolean} true if resolving a dependency, false otherwise.
-             */                
-            isResolvingDependency(handler) {
-                return (handler === _handler)
-                    || (parent && parent.isResolvingDependency(handler))
-            },
-            /**
-             * Formats the dependency resolution chain for display.
-             * @method formattedDependencyChain
-             * @returns {string} formatted dependency resolution chain.
-             */                
-            formattedDependencyChain() {
-                const invariant  = $eq.test(key),
-                      rawKey     = Modifier.unwrap(key),
-                      keyDisplay = invariant ? `\`${rawKey}\`` : rawKey,
-                      display    = _type ? `(${keyDisplay} <- ${_type})` : keyDisplay;
-                return parent 
-                     ? `${display} <= ${parent.formattedDependencyChain()}`
-                     : display;
-            }
-        });
+        this._parent = parent;
+        this._many   = many;
     },
-    acceptPromise(promise) { return promise; }
+    /**
+     * Marks the handler as claiming the dependency.
+     * @method claim
+     * @param   {Function}  handler  -  dependency handler
+     * @param   {Function}  type     -  dependency type
+     * @returns {boolean} true if claimed, false otherwise.
+     */                            
+    claim(handler, type) { 
+        if (this.isResolvingDependency(handler)) {
+            return false;
+        }
+        this._handler = handler;
+        this._type    = type;
+        return true;
+    },
+    /**
+     * Gets the parent dependency
+     * @property {DependencyResolution} parent
+     */
+    get parent() { return this._parent; },            
+    /**
+     * Gets the component requesting the dependency.
+     * @property {Object} component
+     */
+    get type() { return this._type; },
+    /**
+     * Determines if the handler is in the process of resolving a dependency.
+     * @method isResolvingDependency
+     * @param   {Function}  handler  -  dependency handler
+     * @returns {boolean} true if resolving a dependency, false otherwise.
+     */                
+    isResolvingDependency(handler) {
+        return (handler === this._handler)
+            || (this.parent && this.parent.isResolvingDependency(handler))
+    },
+    acceptPromise(promise) { return promise; },    
+    /**
+     * Formats the dependency resolution chain for display.
+     * @method formattedDependencyChain
+     * @returns {string} formatted dependency resolution chain.
+     */                
+    formattedDependencyChain() {
+        const invariant  = $eq.test(this.key),
+              rawKey     = Modifier.unwrap(this.key),
+              keyDisplay = invariant ? `\`${rawKey}\`` : rawKey,
+              display    = this._type ? `(${keyDisplay} <- ${this._type})` : keyDisplay;
+        return this.parent 
+                ? `${display} <= ${this.parent.formattedDependencyChain()}`
+                : display;
+    }
 });
 
 /**

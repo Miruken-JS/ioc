@@ -84,34 +84,33 @@ export const TransientLifestyle = Lifestyle.extend({
  */
 export const SingletonLifestyle = Lifestyle.extend({
     constructor(instance) {
-        this.extend({
-            resolve(factory) {
-                if (instance == null) {
-                    return factory(object => {
-                        if (!instance && object) {
-                            instance = this.trackInstance(object);
-                            return instance;
-                        }
-                    });
+        this._instance = instance;
+    },
+    resolve(factory) {
+        if (this._instance == null) {
+            return factory(object => {
+                if (!this._instance && object) {
+                    this._instance = this.trackInstance(object);
+                    return this._instance;
                 }
-                instance = this.trackInstance(instance);
-                return instance;
-            },
-            disposeInstance(object, disposing) {
-                // Singletons cannot be disposed directly
-                if (!disposing && (object === instance)) {
-                    if (this.base(object, disposing)) {
-                        instance = undefined;
-                        return true;
-                    }
-                }
-                return false;
-            },
-            _dispose() {
-                this.disposeInstance(instance);
+            });
+        }
+        this._instance = this.trackInstance(this._instance);
+        return this._instance;
+    },
+    disposeInstance(object, disposing) {
+        // Singletons cannot be disposed directly
+        if (!disposing && (object === this._instance)) {
+            if (this.base(object, disposing)) {
+                this._instance = undefined;
+                return true;
             }
-        });
-    }
+        }
+        return false;
+    },
+    _dispose() {
+        this.disposeInstance(this._instance);
+    }    
 });
 
 /**
@@ -122,64 +121,65 @@ export const SingletonLifestyle = Lifestyle.extend({
  */
 export const ContextualLifestyle = Lifestyle.extend({
     constructor() {
-        let _cache = {};
-        this.extend({
-            resolve(factory, composer) {
-                const context = composer.resolve(Context);
-                if (context) {
-                    const id = context.id;
-                    let   instance = _cache[id];
-                    return instance ? instance : factory(object => {
-                        if (object && !_cache[id]) {
-                            instance = this.trackInstance(object);
-                            instance = this.setContext(object, instance, context);
-                            _cache[id] = instance;
-                            context.onEnded(() => instance.context = null);
-                        }
-                        return instance;
-                    });
+        this._cache = {};
+    },
+    resolve(factory, composer) {
+        const context = composer.resolve(Context);
+        if (context) {
+            const id    = context.id,
+                  cache = this._cache;
+            let   instance = cache[id];
+            return instance ? instance : factory(object => {
+                if (object && !cache[id]) {
+                    instance = this.trackInstance(object);
+                    instance = this.setContext(object, instance, context);
+                    cache[id] = instance;
+                    context.onEnded(() => instance.context = null);
                 }
-            },
-            setContext(object, instance, context) {
-                const lifestyle = this,
-                      property  = getPropertyDescriptors(instance, "context");
-                if (!(property && property.set)) {
-                    instance = object === instance
-                             ? $decorate(object, ContextualMixin)
-                             : instance.extend(ContextualMixin);
+                return instance;
+            });
+        }
+    },
+    setContext(object, instance, context) {
+        const lifestyle = this,
+                property  = getPropertyDescriptors(instance, "context");
+        if (!(property && property.set)) {
+            instance = object === instance
+                        ? $decorate(object, ContextualMixin)
+                        : instance.extend(ContextualMixin);
+        }
+        ContextualHelper.bindContext(instance, context, true);
+        return instance.extend({
+            set context(value) {
+                if (value == context) { return; }
+                if (value != null) {
+                    throw new Error("Container managed instances cannot change context.");
                 }
-                ContextualHelper.bindContext(instance, context, true);
-                return instance.extend({
-                    set context(value) {
-                        if (value == context) { return; }
-                        if (value != null) {
-                            throw new Error("Container managed instances cannot change context");
-                        }
-                        this.base(value);
-                        lifestyle.disposeInstance(instance);
-                        return;
-                    }
-                });
-            },
-            disposeInstance(instance, disposing) {
-                if (!disposing) {  // Cannot be disposed directly
-                    for (let contextId in _cache) {
-                        if (_cache[contextId] === instance) {
-                            this.base(instance, disposing);
-                            Reflect.deleteProperty(_cache, contextId);                            
-                            Reflect.deleteProperty(instance, "context");
-                            return true;
-                        } 
-                    }
-                }
-                return false;
-            },
-            _dispose() {
-                for (let contextId in _cache) {
-                    this.disposeInstance(_cache[contextId]);
-                }
-                _cache = {};
+                this.base(value);
+                lifestyle.disposeInstance(instance);
+                return;
             }
         });
-    }
+    },
+    disposeInstance(instance, disposing) {
+        if (!disposing) {  // Cannot be disposed directly
+            const cache = this._cache;
+            for (let contextId in cache) {
+                if (cache[contextId] === instance) {
+                    this.base(instance, disposing);
+                    Reflect.deleteProperty(cache, contextId);                            
+                    Reflect.deleteProperty(instance, "context");
+                    return true;
+                } 
+            }
+        }
+        return false;
+    },
+    _dispose() {
+        const cache = this._cache;
+        for (let contextId in cache) {
+            this.disposeInstance(cache[contextId]);
+        }
+        this._cache = {};
+    }    
 });

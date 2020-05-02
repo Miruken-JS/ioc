@@ -124,14 +124,13 @@ export const ComponentModelAware = Protocol.extend({
  */
 export const ComponentModelAwarePolicy = Options.extend(ComponentPolicy, {
     constructor(implicit) {
-        this.extend({
-            componentCreated(component, componentModel) {
-                if (!implicit || ComponentModelAware.isAdoptedBy(component)) {
-                    component.componentModel = componentModel;
-                }
-            }        
-        });
-    }
+        this._implicit = implicit;
+    },
+    componentCreated(component, componentModel) {
+        if (!this._implicit || ComponentModelAware.isAdoptedBy(component)) {
+               component.componentModel = componentModel;
+         }
+    }    
 });
 Object.defineProperties(ComponentModelAwarePolicy, {
     /**
@@ -187,30 +186,7 @@ const DEFAULT_POLICIES = [
  */
 export const IoContainer = Handler.extend(Container, {
     constructor() {
-        let _policies = DEFAULT_POLICIES;
-        this.extend({
-            addComponent(componentModel, ...policies) {
-                let policyIndex = 0;                
-                policies = _policies.concat($flatten(policies, true));
-                while (policyIndex < policies.length) {
-                    const policy = policies[policyIndex++];
-                    if ($isFunction(policy.applyPolicy)) {
-                        policy.applyPolicy(componentModel, policies);
-                    }
-                }
-                const validation = $composer.validate(componentModel);
-                if (!validation.valid) {
-                    throw new ComponentModelError(componentModel, validation);
-                }
-                return this.registerHandler(componentModel, policies); 
-            },
-            addPolicies(...policies) {
-                policies = $flatten(policies, true);
-                if (policies.length > 0) {
-                    _policies = _policies.concat(policies);
-                }
-            }                
-        })
+        this._policies = DEFAULT_POLICIES;
     },
     resolve(key) {
         const resolution = key instanceof Resolution ? key
@@ -233,6 +209,27 @@ export const IoContainer = Handler.extend(Container, {
     registerHandler(componentModel, policies) {
         return _registerHandler(componentModel, this, policies); 
     },
+    addComponent(componentModel, ...policies) {
+        let policyIndex = 0;                
+        policies = this._policies.concat($flatten(policies, true));
+        while (policyIndex < policies.length) {
+            const policy = policies[policyIndex++];
+            if ($isFunction(policy.applyPolicy)) {
+                policy.applyPolicy(componentModel, policies);
+            }
+        }
+        const validation = $composer.validate(componentModel);
+        if (!validation.valid) {
+            throw new ComponentModelError(componentModel, validation);
+        }
+        return this.registerHandler(componentModel, policies); 
+    },
+    addPolicies(...policies) {
+        policies = $flatten(policies, true);
+        if (policies.length > 0) {
+            this._policies = this._policies.concat(policies);
+        }
+    },    
     invoke(fn, dependencies, ctx) {
         let   inject  = fn.$inject || fn.inject;
         const manager = new DependencyManager(dependencies);

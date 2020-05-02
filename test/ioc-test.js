@@ -529,7 +529,7 @@ describe("ContextualLifestyle", () => {
                   container = Container(context);
             context.addHandlers(new IoContainer());
             Promise.all(container.register($component(car.RebuiltV12).contextual(),
-                                     $component(car.CraigsJunk))).then(() => {
+                        $component(car.CraigsJunk))).then(() => {
                 let   engine, junk;
                 const childContext = context.newChild();
                 $using(childContext, 

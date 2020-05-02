@@ -35,149 +35,149 @@ const proxyBuilder = new ProxyBuilder();
  */
 export const ComponentModel = Base.extend({
     constructor() {
-        let _key, _impl, _lifestyle, _factory,
-            _invariant = false, _burden = {};
-        this.extend({
-            /**
-             * Gets/sets the component key.
-             * @property {Any} key
-             */
-            get key() { return _key || _impl },
-            set key(value) { _key = value; },
-            /**
-             * Gets/sets the component class.
-             * @property {Functon} implementation
-             */
-            get implementation() {
-                let impl = _impl;
-                if (!impl && $isClass(_key)) {
-                    impl = _key;
-                }
-                return impl;
-            },
-            set implementation(value) {
-                if ($isSomething(value) && !$isClass(value)) {
-                    throw new TypeError(`${value} is not a class.`);
-                }
-                _impl = value;
-            },
-            /**
-             * Gets/sets if component is invariant.
-             * @property {boolean} invariant
-             */                                                
-            get invariant () { return _invariant; },
-            set invariant(value) { _invariant = !!value; },
-            /**
-             * Gets/sets the component lifestyle.
-             * @property {Lifestyle} lifestyle
-             */
-            get lifestyle() { return _lifestyle; },
-            set lifestyle(value) {
-                if (!$isSomething(value) && !(value instanceof Lifestyle)) {
-                    throw new TypeError(`${value} is not a Lifestyle.`);
-                }
-                _lifestyle = value; 
-            },
-            /**
-             * Gets/sets the component factory.
-             * @property {Function} factory
-             */
-            get factory() {
-                const factory = _factory,
-                      clazz   = this.implementation;
-                if (!factory) {
-                    const interceptors = _burden[Facet.Interceptors];
-                    if (interceptors && interceptors.length > 0) {
-                        const types = [];
-                        if (clazz) {
-                            types.push(clazz);
-                        }
-                        if ($isProtocol(_key)) {
-                            types.push(_key);
-                        }
-                        return _makeProxyFactory(types);
-                    } else if (clazz) {
-                        return _makeClassFactory(clazz);
-                    }
-                }
-                return factory;
-            },
-            set factory(value) {
-                if ($isSomething(value) && !$isFunction(value)) {
-                    throw new TypeError(`${value} is not a function.`);
-                }
-                _factory = value;
-            },
-            /**
-             * Gets the component dependency group.
-             * @method getDependencies
-             * @param   {string} [key=Facet.Parameters]  -  dependency group  
-             * @returns {Array}  group dependencies.
-             */                
-            getDependencies(key) { 
-                return _burden[key || Facet.Parameters];
-            },
-            /**
-             * Sets the component dependency group.
-             * @method setDependencies
-             * @param {string} [key=Facet.Parameters]  -  dependency group  
-             * @param {Array}  value                   -  group dependenies.
-             */                
-            setDependencies(key, value) {
-                if (arguments.length === 1) {
-                    value = key, key = Facet.Parameters;
-                }
-                if ($isSomething(value) && !Array.isArray(value)) {
-                    throw new TypeError(`${value} is not an array.`);
-                }
-                _burden[key] = value.map(DependencyModel);
-            },
-            /**
-             * Determines if the component dependency group is complete.
-             * @method allDependenciesDefined
-             * @param  {string}  [key=Facet.Parameters]  -  dependency group
-             * @return {boolean} true if all dependencies defined.
-             */                            
-            allDependenciesDefined(key) {
-                const deps = _burden[key || Facet.Parameters];
-                if (!deps) return false;
-                for (let i = 0; i < deps.length; ++i) {
-                    if (deps[i] === undefined) {
-                        return false;
-                    }
-                }
-                return true;
-            },
-            /**
-             * Manages the component dependency group.
-             * @method manageDependencies
-             * @param  {string}    [key=Facet.Parameters]  -  dependency group  
-             * @param  {Function}  actions                 -  function accepting DependencyManager
-             * @return {Array} dependency group.
-             */                                
-            manageDependencies(key, actions) {
-                if (arguments.length === 1) {
-                    actions = key, key = Facet.Parameters;
-                }
-                let   dependencies = _burden[key];
-                const manager      = new DependencyManager(dependencies);
-                if ($isFunction(actions)) {                
-                    actions(manager);
-                }
-                dependencies = manager.getItems();
-                if (dependencies.length > 0) {
-                    _burden[key] = dependencies;
-                }
-                return dependencies;
-            },
-            /**
-             * Gets the component dependency burden.
-             * @property {Object} burden
-             * @readOnly
-             */                                
-            get burden() { return _burden; }
-        });
+        this._burden = {};
     },
+
+    /**
+     * Gets/sets the component key.
+     * @property {Any} key
+     */
+    get key() { return this._key || this._impl },
+    set key(value) { this._key = value; },
+    /**
+     * Gets/sets the component class.
+     * @property {Functon} implementation
+     */
+    get implementation() {
+        let impl = this._impl;
+        if (!impl && $isClass(this._key)) {
+            impl = this._key;
+        }
+        return impl;
+    },
+    set implementation(value) {
+        if ($isSomething(value) && !$isClass(value)) {
+            throw new TypeError(`${value} is not a class.`);
+        }
+        this._impl = value;
+    },
+    /**
+     * Gets/sets if component is invariant.
+     * @property {boolean} invariant
+     */                                                
+    get invariant () { return this._invariant; },
+    set invariant(value) { this._invariant = !!value; },
+    /**
+     * Gets/sets the component lifestyle.
+     * @property {Lifestyle} lifestyle
+     */
+    get lifestyle() { return this._lifestyle; },
+    set lifestyle(value) {
+        if (!$isSomething(value) && !(value instanceof Lifestyle)) {
+            throw new TypeError(`${value} is not a Lifestyle.`);
+        }
+        this._lifestyle = value; 
+    },
+    /**
+     * Gets/sets the component factory.
+     * @property {Function} factory
+     */
+    get factory() {
+        const factory = this._factory,
+              clazz   = this.implementation;
+        if (!factory) {
+            const interceptors = this._burden[Facet.Interceptors];
+            if (interceptors && interceptors.length > 0) {
+                const types = [];
+                if (clazz) {
+                    types.push(clazz);
+                }
+                if ($isProtocol(this._key)) {
+                    types.push(this._key);
+                }
+                return _makeProxyFactory(types);
+            } else if (clazz) {
+                return _makeClassFactory(clazz);
+            }
+        }
+        return factory;
+    },
+    set factory(value) {
+        if ($isSomething(value) && !$isFunction(value)) {
+            throw new TypeError(`${value} is not a function.`);
+        }
+        this._factory = value;
+    },
+    /**
+     * Gets the component dependency burden.
+     * @property {Object} burden
+     * @readOnly
+     */                                
+    get burden() { return this._burden; },
+
+    /**
+     * Gets the component dependency group.
+     * @method getDependencies
+     * @param   {string} [key=Facet.Parameters]  -  dependency group  
+     * @returns {Array}  group dependencies.
+     */                
+    getDependencies(key) { 
+        return this._burden[key || Facet.Parameters];
+    },
+    /**
+     * Sets the component dependency group.
+     * @method setDependencies
+     * @param {string} [key=Facet.Parameters]  -  dependency group  
+     * @param {Array}  value                   -  group dependenies.
+     */                
+    setDependencies(key, value) {
+        if (arguments.length === 1) {
+            value = key, key = Facet.Parameters;
+        }
+        if ($isSomething(value) && !Array.isArray(value)) {
+            throw new TypeError(`${value} is not an array.`);
+        }
+        this._burden[key] = value.map(DependencyModel);
+    },
+    /**
+     * Determines if the component dependency group is complete.
+     * @method allDependenciesDefined
+     * @param  {string}  [key=Facet.Parameters]  -  dependency group
+     * @return {boolean} true if all dependencies defined.
+     */                            
+    allDependenciesDefined(key) {
+        const deps = this._burden[key || Facet.Parameters];
+        if (!deps) return false;
+        for (let i = 0; i < deps.length; ++i) {
+            if (deps[i] === undefined) {
+                return false;
+            }
+        }
+        return true;
+    },
+    /**
+     * Manages the component dependency group.
+     * @method manageDependencies
+     * @param  {string}    [key=Facet.Parameters]  -  dependency group  
+     * @param  {Function}  actions                 -  function accepting DependencyManager
+     * @return {Array} dependency group.
+     */                                
+    manageDependencies(key, actions) {
+        if (arguments.length === 1) {
+            actions = key, key = Facet.Parameters;
+        }
+        let   dependencies = this._burden[key];
+        const manager      = new DependencyManager(dependencies);
+        if ($isFunction(actions)) {                
+            actions(manager);
+        }
+        dependencies = manager.getItems();
+        if (dependencies.length > 0) {
+            this._burden[key] = dependencies;
+        }
+        return dependencies;
+    },
+
     @validateThat
     keyCanBeDetermined(validation) {
         if (!this.key) {
@@ -214,158 +214,157 @@ function _makeProxyFactory(types) {
  */
 export const ComponentBuilder = Base.extend(Registration, {
     constructor(key) {
-        let _componentModel = new ComponentModel(),
-            _newInContext, _newInChildContext, _policies;
-        _componentModel.key = key;
-        this.extend({
-            /**
-             * Marks the component as invariant.
-             * @method invariant
-             * @return {ComponentBuilder} builder
-             * @chainable
-             */
-            invarian() {
-                _componentModel.setInvariant();
-                return this;
-            },
-            /**
-             * Specifies the component class.
-             * @method boundTo
-             * @param {Function} value  - component class
-             * @return {ComponentBuilder} builder
-             * @chainable
-             */                
-            boundTo(clazz) {
-                _componentModel.implementation = clazz;
-                return this;
-            },
-            /**
-             * Specifies component dependencies.
-             * @method dependsOn
-             * @param  {Argument} arguments  -  dependencies
-             * @return {ComponentBuilder} builder
-             * @chainable
-             */                                
-            dependsOn(...dependencies) {
-                dependencies = $flatten(dependencies);
-                _componentModel.setDependencies(dependencies);
-                return this;
-            },
-            /**
-             * Specifies the component factory.
-             * @method usingFactory
-             * @param {Function} value  - component factory
-             * @return {ComponentBuilder} builder
-             * @chainable
-             */                                
-            usingFactory(factory) {
-                _componentModel.factory = factory;
-                return this;
-            },
-            /**
-             * Uses the supplied component instance.
-             * @method instance
-             * @param {Object} instance  - component instance
-             * @return {ComponentBuilder} builder
-             * @chainable
-             */                                                
-            instance(instance) {
-                _componentModel.lifestyle = new SingletonLifestyle(instance);
-                return this;
-            },
-            /**
-             * Chooses the {{#crossLink "SingletonLifestyle"}}{{/crossLink}}.
-             * @method singleon
-             * @return {ComponentBuilder} builder
-             * @chainable
-             */
-            singleton() {
-                _componentModel.lifestyle = new SingletonLifestyle();
-                return this;
-            },
-            /**
-             * Chooses the {{#crossLink "TransientLifestyle"}}{{/crossLink}}.
-             * @method transient
-             * @return {ComponentBuilder} builder
-             * @chainable
-             */                
-            transient() {
-                _componentModel.lifestyle = new TransientLifestyle();
-                return this;
-            },
-            /**
-             * Chooses the {{#crossLink "ContextualLifestyle"}}{{/crossLink}}.
-             * @method contextual
-             * @return {ComponentBuilder} builder
-             * @chainable
-             */                                
-            contextual() {
-                _componentModel.lifestyle = new ContextualLifestyle();
-                return this;
-            },
-            /**
-             * Binds the component to the current 
-             * {{#crossLink "Context"}}{{/crossLink}}.
-             * @method newInContext
-             * @return {ComponentBuilder} builder
-             * @chainable
-             */                                                
-            newInContext() {
-                _newInContext = true;
-                return this;
-            },
-            /**
-             * Binds the component to a child of the current 
-             * {{#crossLink "Context"}}{{/crossLink}}.
-             * @method newInContext
-             * @return {ComponentBuilder} builder
-             * @chainable
-             */                                                                
-            newInChildContext() {
-                _newInChildContext = true;
-                return this;
-            },
-            /**
-             * Attaches component interceptors.
-             * @method interceptors
-             * @param  {Interceptor}  ...interceptors  -  interceptors
-             * @return {ComponentBuilder} builder
-             * @chainable
-             */                                                
-            interceptors(...interceptors) {
-                interceptors = $flatten(interceptors, true);
-                return new InterceptorBuilder(this, _componentModel, interceptors);
-            },
-            /**
-             * Attaches {{#crossLink "ComponentPolicy"}}{{/crossLink}}'s.
-             * @method policies
-             * @param   {ComponentPolicy}  ...policies  -  policies
-             */            
-            policies(...policies) {
-                policies = $flatten(policies, true);
-                if (policies.length > 0) {
-                    _policies = (_policies || []).concat(policies);
+        this._componentModel     = new ComponentModel();
+        this._componentModel.key = key;
+    },
+    
+    /**
+     * Marks the component as invariant.
+     * @method invariant
+     * @return {ComponentBuilder} builder
+     * @chainable
+     */
+    invariant() {
+        this._componentModel.setInvariant();
+        return this;
+    },
+    /**
+     * Specifies the component class.
+     * @method boundTo
+     * @param {Function} value  - component class
+     * @return {ComponentBuilder} builder
+     * @chainable
+     */                
+    boundTo(clazz) {
+        this._componentModel.implementation = clazz;
+        return this;
+    },
+    /**
+     * Specifies component dependencies.
+     * @method dependsOn
+     * @param  {Argument} arguments  -  dependencies
+     * @return {ComponentBuilder} builder
+     * @chainable
+     */                                
+    dependsOn(...dependencies) {
+        dependencies = $flatten(dependencies);
+        this._componentModel.setDependencies(dependencies);
+        return this;
+    },
+    /**
+     * Specifies the component factory.
+     * @method usingFactory
+     * @param {Function} value  - component factory
+     * @return {ComponentBuilder} builder
+     * @chainable
+     */                                
+    usingFactory(factory) {
+        this._componentModel.factory = factory;
+        return this;
+    },
+    /**
+     * Uses the supplied component instance.
+     * @method instance
+     * @param {Object} instance  - component instance
+     * @return {ComponentBuilder} builder
+     * @chainable
+     */                                                
+    instance(instance) {
+        this._componentModel.lifestyle = new SingletonLifestyle(instance);
+        return this;
+    },
+    /**
+     * Chooses the {{#crossLink "SingletonLifestyle"}}{{/crossLink}}.
+     * @method singleon
+     * @return {ComponentBuilder} builder
+     * @chainable
+     */
+    singleton() {
+        this._componentModel.lifestyle = new SingletonLifestyle();
+        return this;
+    },
+    /**
+     * Chooses the {{#crossLink "TransientLifestyle"}}{{/crossLink}}.
+     * @method transient
+     * @return {ComponentBuilder} builder
+     * @chainable
+     */                
+    transient() {
+        this._componentModel.lifestyle = new TransientLifestyle();
+        return this;
+    },
+    /**
+     * Chooses the {{#crossLink "ContextualLifestyle"}}{{/crossLink}}.
+     * @method contextual
+     * @return {ComponentBuilder} builder
+     * @chainable
+     */                                
+    contextual() {
+        this._componentModel.lifestyle = new ContextualLifestyle();
+        return this;
+    },
+    /**
+     * Binds the component to the current 
+     * {{#crossLink "Context"}}{{/crossLink}}.
+     * @method newInContext
+     * @return {ComponentBuilder} builder
+     * @chainable
+     */                                                
+    newInContext() {
+        this._newInContext = true;
+        return this;
+    },
+    /**
+     * Binds the component to a child of the current 
+     * {{#crossLink "Context"}}{{/crossLink}}.
+     * @method newInContext
+     * @return {ComponentBuilder} builder
+     * @chainable
+     */                                                                
+    newInChildContext() {
+        this._newInChildContext = true;
+        return this;
+    },
+    /**
+     * Attaches component interceptors.
+     * @method interceptors
+     * @param  {Interceptor}  ...interceptors  -  interceptors
+     * @return {ComponentBuilder} builder
+     * @chainable
+     */                                                
+    interceptors(...interceptors) {
+        interceptors = $flatten(interceptors, true);
+        return new InterceptorBuilder(this, this._componentModel, interceptors);
+    },
+    /**
+     * Attaches {{#crossLink "ComponentPolicy"}}{{/crossLink}}'s.
+     * @method policies
+     * @param   {ComponentPolicy}  ...policies  -  policies
+     */            
+    policies(...policies) {
+        policies = $flatten(policies, true);
+        if (policies.length > 0) {
+            this._policies = (this._policies || []).concat(policies);
+        }
+        return this;
+    },
+    register(container) {
+        if (this._newInContext || this._newInChildContext) {
+            const factory   = this._componentModel.factory,
+                  component = this;
+            this._componentModel.factory = function (dependencies) {
+                const object  = factory(dependencies),
+                      context = this.resolve(Context);
+                if (component._newInContext) {
+                    ContextualHelper.bindContext(object, context);
+                } else {
+                    ContextualHelper.bindChildContext(context, object);
                 }
-                return this;
-            },
-            register(container) {
-                if ( _newInContext || _newInChildContext) {
-                    const factory = _componentModel.factory;
-                    _componentModel.factory = function (dependencies) {
-                        const object  = factory(dependencies),
-                              context = this.resolve(Context);
-                        if (_newInContext) {
-                            ContextualHelper.bindContext(object, context);
-                        } else {
-                            ContextualHelper.bindChildContext(context, object);
-                        }
-                        return object;
-                    };
-                }
-                return container.addComponent(_componentModel, _policies);
-            }
-        });
-    }
+                return object;
+            };
+        }
+        return container.addComponent(this._componentModel, this._policies);
+    }    
 });
 
 /**
